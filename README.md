@@ -10,6 +10,12 @@
 
 Pure PHP **FTP / FTPS / SFTP** client (framework agnostic).
 
+Simple, expressive API:
+
+```php
+$client = FtpClient::fromUrl('ftp://user:pass@example.com:22/path');
+```
+
 A clean, testable and production-ready transport layer designed for:
 
 * Modern PHP applications (8.2+)
@@ -118,11 +124,9 @@ Optional extensions:
 ## Quick Start
 
 ```php
-use Cxxi\FtpClient\Service\ClientFactory;
+use Cxxi\FtpClient\FtpClient;
 
-$factory = new ClientFactory();
-
-$client = $factory->create('ftp://user:pass@example.com:21/path');
+$client = FtpClient::fromUrl('ftp://user:pass@example.com:21/path');
 
 $client
     ->connect()
@@ -163,7 +167,7 @@ $options = new ConnectionOptions(
     retryJitter: true
 );
 
-$client = $factory->create(
+$client = FtpClient::fromUrl(
     'ftps://user:pass@example.com:21/path',
     options: $options
 );
@@ -357,7 +361,12 @@ Only valid for SFTP connections.
 Pass a `Psr\Log\LoggerInterface` to the factory:
 
 ```php
-$factory = new ClientFactory(logger: $logger);
+use Cxxi\FtpClient\FtpClient;
+
+$client = FtpClient::fromUrl(
+    'ftp://user:pass@example.com:21/path',
+    logger: $logger
+);
 ```
 
 Logged events include:

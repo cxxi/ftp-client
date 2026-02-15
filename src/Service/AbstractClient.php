@@ -6,8 +6,6 @@ namespace Cxxi\FtpClient\Service;
 
 use Cxxi\FtpClient\Contracts\ClientTransportInterface;
 use Cxxi\FtpClient\Enum\Protocol;
-use Cxxi\FtpClient\Exception\FtpClientException;
-use Cxxi\FtpClient\Exception\MissingExtensionException;
 use Cxxi\FtpClient\Exception\TransferException;
 use Cxxi\FtpClient\Infrastructure\Native\NativeFilesystemFunctions;
 use Cxxi\FtpClient\Infrastructure\Port\FilesystemFunctionsInterface;
