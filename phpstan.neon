@@ -1,0 +1,9 @@
+parameters:
+    level: 8
+
+    paths:
+        - src
+
+    tmpDir: var/phpstan
+
+    treatPhpDocTypesAsCertain: true

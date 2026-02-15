@@ -1,0 +1,51 @@
+{
+  "name": "cxxi/ftp-client",
+  "description": "Pure PHP FTP/FTPS/SFTP client (framework agnostic).",
+  "license": "MIT",
+  "type": "library",
+  "autoload": {
+    "psr-4": {
+      "Cxxi\\FtpClient\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=8.2",
+    "psr/log": "^3.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.0",
+    "friendsofphp/php-cs-fixer": "^3.94",
+    "phpstan/phpstan": "^2.1"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Cxxi\\FtpClient\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "phpstan": "phpstan analyse",
+    "phpstan:9": "phpstan analyse -c phpstan9.neon",
+    "cs": "php-cs-fixer fix",
+    "cs:check": "php-cs-fixer fix --dry-run --diff",
+    "test": "phpunit",
+    "test:coverage": "php -d xdebug.mode=coverage vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml"
+  },
+  "suggest": {
+    "ext-ftp": "Required for FTP/FTPS operations.",
+    "ext-ssh2": "Required for SFTP operations."
+  },
+  "keywords": [
+    "ftp",
+    "ftps",
+    "sftp",
+    "client",
+    "transfer",
+    "ssh",
+    "upload",
+    "download"
+  ],
+  "support": {
+    "issues": "https://github.com/cxxi/ftp-client/issues",
+    "source": "https://github.com/cxxi/ftp-client"
+  }
+}
