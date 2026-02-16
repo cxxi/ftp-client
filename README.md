@@ -48,10 +48,11 @@ Supports:
 * [Authentication](#authentication)
 * [Logging](#logging)
 * [Connection Lifecycle](#connection-lifecycle)
-* [FTP-only Advanced Listing](#ftp-only-advanced-listing)
-* [SFTP Fingerprint Limitations (ext-ssh2)](#sftp-fingerprint-limitations-ext-ssh2)
 * [Architecture](#architecture)
 * [Quality & Tests](#quality--tests)
+* [Troubleshooting](#troubleshooting)
+* [Contributing](#contributing)
+* [Security](#security)
 * [Roadmap](#roadmap)
 * [License](#license)
 
@@ -157,6 +158,8 @@ Optional extensions:
 * `ext-ftp` → required for FTP / FTPS
 * `ext-ssh2` → required for SFTP
 
+Note: FTPS requires `ext-ftp` with SSL support (`ftp_ssl_connect()` available).
+
 ---
 
 ## Quick Start
@@ -211,12 +214,16 @@ $client = FtpClient::fromUrl(
 );
 ```
 
-Or build from an array:
+### Array format (canonical structure)
+
+You can also build options from an array.
+The canonical structure groups protocol-specific options under dedicated keys:
 
 ```php
 $options = ConnectionOptions::fromArray([
     'timeout' => 15,
     'passive' => 'auto',
+
     'retry' => [
         'max' => 3,
         'delay_ms' => 500,
@@ -224,8 +231,17 @@ $options = ConnectionOptions::fromArray([
         'jitter' => true,
         'unsafe_operations' => false,
     ],
+
+    'sftp' => [
+        'host_key_algo' => 'ssh-ed25519',
+        'expected_fingerprint' => 'MD5:aa:bb:cc:dd:...',
+        'strict_host_key_checking' => true,
+    ],
 ]);
 ```
+
+Protocol-specific keys are ignored when not applicable
+(e.g. `passive` is ignored for SFTP).
 
 ---
 
@@ -268,6 +284,32 @@ $options = new ConnectionOptions(
 
 If `strictHostKeyChecking` is enabled and fingerprint does not match,
 connection will fail.
+
+---
+
+## SFTP Fingerprint Limitations (ext-ssh2)
+
+When using the `ext-ssh2` extension (PECL ssh2), only the following
+fingerprint algorithms are available via `ssh2_fingerprint()`:
+
+* `MD5`
+* `SHA1`
+
+The extension does **not** expose SHA256 fingerprints, even though
+the underlying libssh2 library supports it.
+
+As a consequence:
+
+* `SHA256:` fingerprints (OpenSSH default format) cannot be verified
+  when using ext-ssh2.
+* Only `MD5:` and `SHA1:` prefixed fingerprints are supported.
+* There is no automatic fallback between algorithms.
+
+If a `SHA256:` fingerprint is provided, the connection will fail
+when strict host key checking is enabled.
+
+This limitation comes from the PHP extension API, not from the
+library itself.
 
 ---
 
@@ -349,6 +391,18 @@ $client->chmod('file.csv', 0644);
 
 ---
 
+## FTP-only Advanced Listing
+
+Available only on FTP / FTPS:
+
+```php
+$raw = $client->rawList('.', recursive: false);
+
+$mlsd = $client->mlsd('.');
+```
+
+---
+
 ## Authentication
 
 ### Password
@@ -380,18 +434,6 @@ $client
 ```
 
 Only valid for SFTP connections.
-
----
-
-## FTP-only Advanced Listing
-
-Available only on FTP / FTPS:
-
-```php
-$raw = $client->rawList('.', recursive: false);
-
-$mlsd = $client->mlsd('.');
-```
 
 ---
 
@@ -433,32 +475,6 @@ Safe to call even if not connected.
 
 ---
 
-## SFTP Fingerprint Limitations (ext-ssh2)
-
-When using the `ext-ssh2` extension (PECL ssh2), only the following
-fingerprint algorithms are available via `ssh2_fingerprint()`:
-
-* `MD5`
-* `SHA1`
-
-The extension does **not** expose SHA256 fingerprints, even though
-the underlying libssh2 library supports it.
-
-As a consequence:
-
-* `SHA256:` fingerprints (OpenSSH default format) cannot be verified
-  when using ext-ssh2.
-* Only `MD5:` and `SHA1:` prefixed fingerprints are supported.
-* There is no automatic fallback between algorithms.
-
-If a `SHA256:` fingerprint is provided, the connection will fail
-when strict host key checking is enabled.
-
-This limitation comes from the PHP extension API, not from the
-library itself.
-
----
-
 ## Architecture
 
 The library follows a clean architecture approach:
@@ -476,8 +492,6 @@ This design allows easy mocking and full unit testing.
 ## Quality & Tests
 
 This library is designed for reliability in production environments.
-
-The test suite includes:
 
 ### Unit Tests
 
@@ -569,9 +583,64 @@ Every protocol feature documented in this README is covered by automated tests.
 
 ---
 
-## Roadmap
+## Troubleshooting
 
-Planned future improvements:
+### FTPS: `ftp_ssl_connect()` not available
+
+Make sure `ext-ftp` is compiled with SSL support.
+`ftp_ssl_connect()` must be available.
+
+### SFTP: host key verification fails
+
+* Ensure the fingerprint prefix matches (`MD5:` or `SHA1:`).
+* SHA256 fingerprints are not supported by `ext-ssh2`.
+
+### Passive mode issues (FTP/FTPS)
+
+If transfers hang behind NAT/firewalls:
+
+* Try forcing passive mode (`passive: true`)
+* Or use `passive: auto`
+
+### Connection timeouts
+
+Adjust the `timeout` option depending on network conditions.
+
+---
+
+## Contributing
+
+Contributions are welcome.
+
+Before submitting a pull request:
+
+1. Ensure all unit tests pass.
+2. Ensure all integration tests pass.
+3. Run PHPStan (level 8 must remain clean).
+4. Follow existing coding standards.
+
+Useful commands:
+
+```bash
+composer test:all
+composer phpstan
+composer cs
+```
+
+Please open an issue first for significant changes or architectural discussions.
+
+---
+
+## Security
+
+If you discover a security vulnerability, please open a GitHub Security Advisory
+or contact the maintainer privately before disclosing it publicly.
+
+Credentials are never logged by design.
+
+---
+
+## Roadmap
 
 ### phpseclib backend
 
@@ -604,4 +673,4 @@ Expose SHA256 fingerprint verification when available
 
 ## License
 
-MIT.
+MIT — see [LICENSE](LICENSE).
