@@ -21,9 +21,9 @@ use Psr\Log\LoggerInterface;
  * connection routine using {@see FtpFunctionsInterface::connect()}.
  *
  * For FTPS (explicit/implicit) variants, use a dedicated implementation that
- * overrides {@see AbstractFtpClient::doConnectFtp()} accordingly.
+ * overrides {@see AbstractFtpTransport::doConnectFtp()} accordingly.
  */
-final class FtpClient extends AbstractFtpClient implements FtpClientTransportInterface
+final class FtpTransport extends AbstractFtpTransport implements FtpClientTransportInterface
 {
     /**
      * @param FtpUrl $url Parsed FTP URL (protocol, host, port, credentials, path).

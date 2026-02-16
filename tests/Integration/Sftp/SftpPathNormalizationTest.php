@@ -60,8 +60,8 @@ final class SftpPathNormalizationTest extends SftpIntegrationTestCase
             self::assertContainsOnly('string', $a);
             self::assertContainsOnly('string', $b);
 
-            sort($a);
-            sort($b);
+            \sort($a);
+            \sort($b);
             self::assertSame($a, $b);
         } finally {
             $client->closeConnection();

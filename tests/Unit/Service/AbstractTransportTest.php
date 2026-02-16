@@ -10,15 +10,15 @@ use Cxxi\FtpClient\Exception\TransferException;
 use Cxxi\FtpClient\Infrastructure\Port\FilesystemFunctionsInterface;
 use Cxxi\FtpClient\Model\ConnectionOptions;
 use Cxxi\FtpClient\Model\FtpUrl;
-use Cxxi\FtpClient\Service\AbstractClient;
+use Cxxi\FtpClient\Service\AbstractTransport;
 use Cxxi\FtpClient\Util\WarningCatcher;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
-#[CoversClass(AbstractClient::class)]
-final class AbstractClientTest extends TestCase
+#[CoversClass(AbstractTransport::class)]
+final class AbstractTransportTest extends TestCase
 {
     private function makeUrl(): FtpUrl
     {
@@ -594,7 +594,7 @@ final class AbstractClientTest extends TestCase
     }
 }
 
-final class TestClient extends AbstractClient
+final class TestClient extends AbstractTransport
 {
     /** @var array<string, list<array>> */
     public array $calls = [

@@ -10,17 +10,17 @@ use Cxxi\FtpClient\Infrastructure\Port\FtpFunctionsInterface;
 use Cxxi\FtpClient\Infrastructure\Port\Ssh2FunctionsInterface;
 use Cxxi\FtpClient\Infrastructure\Port\StreamFunctionsInterface;
 use Cxxi\FtpClient\Model\ConnectionOptions;
-use Cxxi\FtpClient\Service\ClientFactory;
-use Cxxi\FtpClient\Service\Ftp\FtpClient;
-use Cxxi\FtpClient\Service\Ftp\FtpsClient;
-use Cxxi\FtpClient\Service\Sftp\SftpClient;
+use Cxxi\FtpClient\Service\ClientTransportFactory;
+use Cxxi\FtpClient\Service\Ftp\FtpsTransport;
+use Cxxi\FtpClient\Service\Ftp\FtpTransport;
+use Cxxi\FtpClient\Service\Sftp\SftpTransport;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
-#[CoversClass(ClientFactory::class)]
-final class ClientFactoryTest extends TestCase
+#[CoversClass(ClientTransportFactory::class)]
+final class ClientTransportFactoryTest extends TestCase
 {
     #[DataProvider('createProvider')]
     public function testCreateBuildsExpectedTransportAndLogsContext(
@@ -38,7 +38,7 @@ final class ClientFactoryTest extends TestCase
                 ['ssh2', true],
             ]);
 
-        $factory = new ClientFactory(
+        $factory = new ClientTransportFactory(
             extensions: $extensions,
             ftp: $this->createMock(FtpFunctionsInterface::class),
             ssh2: $this->createMock(Ssh2FunctionsInterface::class),
@@ -56,7 +56,7 @@ final class ClientFactoryTest extends TestCase
                 self::callback(function (array $context) use ($expectedProtocolValue): bool {
                     self::assertSame($expectedProtocolValue, $context['protocol'] ?? null);
                     self::assertSame('example.com', $context['host'] ?? null);
-                    self::assertTrue(($context['port'] ?? null) === null || is_int($context['port']));
+                    self::assertTrue(($context['port'] ?? null) === null || \is_int($context['port']));
                     self::assertIsString($context['path'] ?? null);
                     self::assertNotSame('', $context['path']);
                     self::assertStringStartsWith('/', $context['path']);
@@ -83,7 +83,7 @@ final class ClientFactoryTest extends TestCase
                 ['ssh2', true],
             ]);
 
-        $factory = new ClientFactory(
+        $factory = new ClientTransportFactory(
             extensions: $extensions,
             ftp: $this->createMock(FtpFunctionsInterface::class),
             ssh2: $this->createMock(Ssh2FunctionsInterface::class),
@@ -93,7 +93,7 @@ final class ClientFactoryTest extends TestCase
 
         $client = $factory->create('ftp://example.com/path', new ConnectionOptions(), null);
 
-        self::assertInstanceOf(FtpClient::class, $client);
+        self::assertInstanceOf(FtpTransport::class, $client);
     }
 
     /**
@@ -102,9 +102,9 @@ final class ClientFactoryTest extends TestCase
     public static function createProvider(): array
     {
         return [
-            'FTP' => ['ftp://example.com/base', FtpClient::class, 'ftp'],
-            'FTPS' => ['ftps://example.com/base', FtpsClient::class, 'ftps'],
-            'SFTP' => ['sftp://example.com/base', SftpClient::class, 'sftp'],
+            'FTP' => ['ftp://example.com/base', FtpTransport::class, 'ftp'],
+            'FTPS' => ['ftps://example.com/base', FtpsTransport::class, 'ftps'],
+            'SFTP' => ['sftp://example.com/base', SftpTransport::class, 'sftp'],
         ];
     }
 }

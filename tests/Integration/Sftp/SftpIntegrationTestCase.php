@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cxxi\FtpClient\Tests\Integration\Sftp;
 
+use Cxxi\FtpClient\Contracts\ClientTransportInterface;
 use Cxxi\FtpClient\FtpClient;
 use Cxxi\FtpClient\Model\ConnectionOptions;
 use Cxxi\FtpClient\Tests\Support\Env;
@@ -26,11 +27,11 @@ abstract class SftpIntegrationTestCase extends TestCase
             Env::string('SFTP_PASS', 'test'),
             Env::string('SFTP_HOST', 'sftp'),
             Env::int('SFTP_PORT', 22),
-            ltrim($path, '/')
+            \ltrim($path, '/')
         );
     }
 
-    protected function client(?ConnectionOptions $options = null): \Cxxi\FtpClient\Contracts\ClientTransportInterface
+    protected function client(?ConnectionOptions $options = null): ClientTransportInterface
     {
         $client = FtpClient::fromUrl($this->sftpUrl('upload'), options: $options);
         $client->connect()->loginWithPassword();
@@ -47,7 +48,7 @@ abstract class SftpIntegrationTestCase extends TestCase
     {
         $v = Env::stringOrNull($key);
         if ($v === null) {
-            self::markTestSkipped(sprintf('%s is not set (should be injected by bin/integration).', $key));
+            self::markTestSkipped(\sprintf('%s is not set (should be injected by bin/integration).', $key));
         }
 
         return $v;
@@ -57,7 +58,7 @@ abstract class SftpIntegrationTestCase extends TestCase
     {
         $v = Env::int($key, 0);
         if ($v <= 0) {
-            self::markTestSkipped(sprintf('%s is not set (should be injected by bin/integration).', $key));
+            self::markTestSkipped(\sprintf('%s is not set (should be injected by bin/integration).', $key));
         }
 
         return $v;
@@ -67,7 +68,7 @@ abstract class SftpIntegrationTestCase extends TestCase
     {
         $raw = Env::stringOrNull($key);
         if ($raw === null) {
-            self::markTestSkipped(sprintf('%s is not set (should be injected by bin/integration).', $key));
+            self::markTestSkipped(\sprintf('%s is not set (should be injected by bin/integration).', $key));
         }
 
         return Env::bool($key, false);

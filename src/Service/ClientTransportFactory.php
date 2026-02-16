@@ -19,9 +19,9 @@ use Cxxi\FtpClient\Infrastructure\Port\Ssh2FunctionsInterface;
 use Cxxi\FtpClient\Infrastructure\Port\StreamFunctionsInterface;
 use Cxxi\FtpClient\Model\ConnectionOptions;
 use Cxxi\FtpClient\Model\FtpUrl;
-use Cxxi\FtpClient\Service\Ftp\FtpClient;
-use Cxxi\FtpClient\Service\Ftp\FtpsClient;
-use Cxxi\FtpClient\Service\Sftp\SftpClient;
+use Cxxi\FtpClient\Service\Ftp\FtpsTransport;
+use Cxxi\FtpClient\Service\Ftp\FtpTransport;
+use Cxxi\FtpClient\Service\Sftp\SftpTransport;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -29,9 +29,9 @@ use Psr\Log\LoggerInterface;
  *
  * This factory parses the provided URL into an {@see FtpUrl} value object and then
  * instantiates the appropriate transport implementation based on {@see Protocol}:
- * - {@see Protocol::FTP}  -> {@see FtpClient}
- * - {@see Protocol::FTPS} -> {@see FtpsClient}
- * - {@see Protocol::SFTP} -> {@see SftpClient}
+ * - {@see Protocol::FTP}  -> {@see FtpTransport}
+ * - {@see Protocol::FTPS} -> {@see FtpsTransport}
+ * - {@see Protocol::SFTP} -> {@see SftpTransport}
  *
  * Dependencies are injected via interfaces to allow testing and to decouple from:
  * - native extension availability checks
@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
  * - stream wrapper functions
  * - filesystem functions
  */
-final class ClientFactory implements ClientTransportFactoryInterface
+final class ClientTransportFactory implements ClientTransportFactoryInterface
 {
     /**
      * Extension checker shared by created transports.
@@ -114,7 +114,7 @@ final class ClientFactory implements ClientTransportFactoryInterface
         ]);
 
         return match ($ftpUrl->protocol) {
-            Protocol::FTP => new FtpClient(
+            Protocol::FTP => new FtpTransport(
                 url: $ftpUrl,
                 options: $options,
                 logger: $logger,
@@ -122,7 +122,7 @@ final class ClientFactory implements ClientTransportFactoryInterface
                 ftp: $this->ftp,
                 fs: $this->fs
             ),
-            Protocol::FTPS => new FtpsClient(
+            Protocol::FTPS => new FtpsTransport(
                 url: $ftpUrl,
                 options: $options,
                 logger: $logger,
@@ -130,7 +130,7 @@ final class ClientFactory implements ClientTransportFactoryInterface
                 ftp: $this->ftp,
                 fs: $this->fs
             ),
-            Protocol::SFTP => new SftpClient(
+            Protocol::SFTP => new SftpTransport(
                 url: $ftpUrl,
                 options: $options,
                 logger: $logger,

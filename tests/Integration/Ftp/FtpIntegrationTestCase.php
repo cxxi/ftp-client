@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cxxi\FtpClient\Tests\Integration\Ftp;
 
+use Cxxi\FtpClient\Contracts\ClientTransportInterface;
 use Cxxi\FtpClient\FtpClient;
 use Cxxi\FtpClient\Model\ConnectionOptions;
 use Cxxi\FtpClient\Tests\Support\Env;
@@ -30,7 +31,7 @@ abstract class FtpIntegrationTestCase extends TestCase
         );
     }
 
-    protected function client(?ConnectionOptions $options = null): \Cxxi\FtpClient\Contracts\ClientTransportInterface
+    protected function client(?ConnectionOptions $options = null): ClientTransportInterface
     {
         $client = FtpClient::fromUrl($this->ftpUrl(''), options: $options);
         $client->connect()->loginWithPassword();

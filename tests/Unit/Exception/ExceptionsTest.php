@@ -7,8 +7,10 @@ namespace Cxxi\FtpClient\Tests\Unit\Exception;
 use Cxxi\FtpClient\Exception\AuthenticationException;
 use Cxxi\FtpClient\Exception\ConnectionException;
 use Cxxi\FtpClient\Exception\FtpClientException;
+use Cxxi\FtpClient\Exception\InfrastructureException;
 use Cxxi\FtpClient\Exception\InvalidFtpUrlException;
 use Cxxi\FtpClient\Exception\MissingExtensionException;
+use Cxxi\FtpClient\Exception\NativeCallTypeMismatchException;
 use Cxxi\FtpClient\Exception\TransferException;
 use Cxxi\FtpClient\Exception\UnsupportedProtocolException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -22,10 +24,12 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(MissingExtensionException::class)]
 #[CoversClass(TransferException::class)]
 #[CoversClass(UnsupportedProtocolException::class)]
+#[CoversClass(InfrastructureException::class)]
+#[CoversClass(NativeCallTypeMismatchException::class)]
 final class ExceptionsTest extends TestCase
 {
-    #[DataProvider('exceptionsProvider')]
-    public function testExceptionsAreInHierarchy(string $class): void
+    #[DataProvider('allExceptionsProvider')]
+    public function testAllExceptionsAreInBaseHierarchy(string $class): void
     {
         $previous = new \RuntimeException('prev', 41);
 
@@ -41,10 +45,21 @@ final class ExceptionsTest extends TestCase
         self::assertInstanceOf(\Throwable::class, $e);
     }
 
+    #[DataProvider('infrastructureExceptionsProvider')]
+    public function testInfrastructureExceptionsAreInInfrastructureHierarchy(string $class): void
+    {
+        $previous = new \RuntimeException('prev', 41);
+
+        /** @var \Throwable $e */
+        $e = new $class('msg', 42, $previous);
+
+        self::assertInstanceOf(InfrastructureException::class, $e);
+    }
+
     /**
      * @return array<string, array{0: class-string}>
      */
-    public static function exceptionsProvider(): array
+    public static function allExceptionsProvider(): array
     {
         return [
             'AuthenticationException' => [AuthenticationException::class],
@@ -53,6 +68,17 @@ final class ExceptionsTest extends TestCase
             'MissingExtensionException' => [MissingExtensionException::class],
             'TransferException' => [TransferException::class],
             'UnsupportedProtocolException' => [UnsupportedProtocolException::class],
+            'NativeCallTypeMismatchException' => [NativeCallTypeMismatchException::class],
+        ];
+    }
+
+    /**
+     * @return array<string, array{0: class-string}>
+     */
+    public static function infrastructureExceptionsProvider(): array
+    {
+        return [
+            'NativeCallTypeMismatchException' => [NativeCallTypeMismatchException::class],
         ];
     }
 }

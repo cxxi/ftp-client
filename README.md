@@ -3,7 +3,7 @@
 [![PHP Version](https://img.shields.io/badge/php-8.2%2B-blue.svg)](https://php.net)
 [![CI](https://github.com/cxxi/ftp-client/actions/workflows/ci.yml/badge.svg)](https://github.com/cxxi/ftp-client/actions)
 [![Tests](https://img.shields.io/badge/tests-unit%20%2B%20integration-brightgreen.svg)](https://github.com/cxxi/ftp-client/actions)
-[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/cxxi/ftp-client)
+[![codecov](https://codecov.io/github/cxxi/ftp-client/graph/badge.svg?token=WMPYTYOOPQ)](https://codecov.io/github/cxxi/ftp-client)
 [![PHPStan Level](https://img.shields.io/badge/phpstan-level%20max%20\(9\)%20%2B%20strict%20rules-brightgreen.svg)](https://phpstan.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Packagist](https://img.shields.io/packagist/v/cxxi/ftp-client.svg)](https://packagist.org/packages/cxxi/ftp-client)
@@ -32,7 +32,7 @@ Supports:
 
 * Automatic protocol resolution (`ftp://`, `ftps://`, `sftp://`)
 * Safe retry policies with exponential backoff & jitter
-* SFTP host key verification (SHA256)
+* SFTP host key verification (MD5 / SHA1)
 * PSR-3 logging
 * Clean architecture (Ports & Adapters)
 
@@ -136,7 +136,7 @@ This library is:
 
 * Fully covered by unit tests (100%)
 * Integration tested against real FTP / FTPS / SFTP servers
-* Static-analysis clean (PHPStan level 8)
+*  Static analysis clean (PHPStan level max (9) + strict rules)
 * Free of global state
 * Designed for deterministic error handling
 
@@ -484,7 +484,7 @@ Safe to call even if not connected.
 The library follows a clean architecture approach:
 
 * Transport contracts (`Contracts`)
-* Protocol-specific services (FTP / SFTP)
+* Protocol-specific transports (FTP / SFTP)
 * Infrastructure ports (filesystem, streams, ssh2, ftp)
 * Native adapters
 * Retry wrapper with safe/unsafe semantics

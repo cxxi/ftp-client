@@ -19,7 +19,7 @@ final class SftpPasswordOverrideTest extends SftpIntegrationTestCase
         $user = $this->requireEnvString('SFTP_USER');
         $pass = $this->requireEnvString('SFTP_PASS');
 
-        $url = sprintf('sftp://%s:%d/upload', $host, $port);
+        $url = \sprintf('sftp://%s:%d/upload', $host, $port);
 
         $client = FtpClient::fromUrl($url);
 
@@ -40,7 +40,7 @@ final class SftpPasswordOverrideTest extends SftpIntegrationTestCase
         $user = $this->requireEnvString('SFTP_USER');
         $pass = $this->requireEnvString('SFTP_PASS');
 
-        $url = sprintf('sftp://wrong:wrong@%s:%d/upload', $host, $port);
+        $url = \sprintf('sftp://wrong:wrong@%s:%d/upload', $host, $port);
 
         $client = FtpClient::fromUrl($url);
 

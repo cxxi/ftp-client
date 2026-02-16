@@ -66,7 +66,7 @@ final readonly class FtpUrl
             $rest = $m['rest'];
 
             if ($rest !== '' && ($rest[0] === '/' || $rest[0] === ':' || $rest[0] === '@')) {
-                throw new InvalidFtpUrlException(sprintf(
+                throw new InvalidFtpUrlException(\sprintf(
                     'Invalid FTP URL: missing host. URL: "%s".',
                     $url
                 ));
@@ -76,21 +76,21 @@ final readonly class FtpUrl
         $parts = \parse_url($url);
 
         if (!\is_array($parts)) {
-            throw new InvalidFtpUrlException(sprintf(
+            throw new InvalidFtpUrlException(\sprintf(
                 'Invalid FTP URL: unable to parse. URL: "%s".',
                 $url
             ));
         }
 
         if (!isset($parts['scheme']) || $parts['scheme'] === '') {
-            throw new InvalidFtpUrlException(sprintf(
+            throw new InvalidFtpUrlException(\sprintf(
                 'Invalid FTP URL: missing scheme (expected "ftp", "ftps" or "sftp"). URL: "%s".',
                 $url
             ));
         }
 
         if (!isset($parts['host']) || $parts['host'] === '') {
-            throw new InvalidFtpUrlException(sprintf(
+            throw new InvalidFtpUrlException(\sprintf(
                 'Invalid FTP URL: missing host. URL: "%s".',
                 $url
             ));

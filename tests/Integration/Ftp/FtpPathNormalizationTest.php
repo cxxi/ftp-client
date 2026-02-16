@@ -57,7 +57,7 @@ final class FtpPathNormalizationTest extends FtpIntegrationTestCase
             self::assertIsList($listRoot);
             self::assertContainsOnly('string', $listRoot);
 
-            $rootBasenames = array_map(static fn (string $p): string => \basename($p), $listRoot);
+            $rootBasenames = \array_map(static fn (string $p): string => \basename($p), $listRoot);
             self::assertContains($name, $rootBasenames);
         } catch (\Throwable) {
             self::addToAssertionCount(1);

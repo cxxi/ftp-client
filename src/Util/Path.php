@@ -35,9 +35,9 @@ final class Path
      */
     public static function joinRemote(string $basePath, string $childPath): string
     {
-        $base = rtrim($basePath === '' ? '/' : $basePath, '/');
+        $base = \rtrim($basePath === '' ? '/' : $basePath, '/');
 
-        $child = ltrim($childPath, '/');
+        $child = \ltrim($childPath, '/');
 
         return $child === '' ? $base : $base . '/' . $child;
     }

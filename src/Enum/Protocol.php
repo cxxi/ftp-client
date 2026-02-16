@@ -48,14 +48,14 @@ enum Protocol: string
      */
     public static function fromScheme(string $scheme): self
     {
-        $scheme = strtolower(trim($scheme));
+        $scheme = \strtolower(\trim($scheme));
 
         return match ($scheme) {
             'ftp' => self::FTP,
             'ftps' => self::FTPS,
             'sftp' => self::SFTP,
             default => throw new UnsupportedProtocolException(
-                sprintf('Unsupported protocol: "%s"', $scheme)
+                \sprintf('Unsupported protocol: "%s"', $scheme)
             ),
         };
     }

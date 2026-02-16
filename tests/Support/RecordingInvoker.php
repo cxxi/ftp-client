@@ -90,7 +90,6 @@ final class RecordingInvoker implements NativeFunctionInvokerInterface
             return $configured->value;
         }
 
-        // If configured as a sequential list, consume next element.
         if (\is_array($configured) && $this->isSequentialList($configured)) {
             $i = $this->callIndexByFunction[$function] ?? 0;
 
@@ -105,7 +104,6 @@ final class RecordingInvoker implements NativeFunctionInvokerInterface
             return $configured[$i];
         }
 
-        // Otherwise return the configured value as-is.
         return $configured;
     }
 
@@ -129,7 +127,6 @@ final class RecordingInvoker implements NativeFunctionInvokerInterface
      */
     private function isSequentialList(array $value): bool
     {
-        // PHP 8.1+ provides array_is_list().
         return \array_is_list($value);
     }
 }

@@ -91,7 +91,7 @@ final class WarningCatcher
     public function formatLastWarning(): string
     {
         return ($this->lastWarning !== null && $this->lastWarning !== '')
-            ? sprintf(' Details: %s', $this->lastWarning)
+            ? \sprintf(' Details: %s', $this->lastWarning)
             : '';
     }
 

@@ -16,14 +16,14 @@ use Cxxi\FtpClient\Infrastructure\Port\FilesystemFunctionsInterface;
 use Cxxi\FtpClient\Infrastructure\Port\FtpFunctionsInterface;
 use Cxxi\FtpClient\Model\ConnectionOptions;
 use Cxxi\FtpClient\Model\FtpUrl;
-use Cxxi\FtpClient\Service\AbstractClient;
+use Cxxi\FtpClient\Service\AbstractTransport;
 use Cxxi\FtpClient\Util\WarningCatcher;
 use Psr\Log\LoggerInterface;
 
 /**
  * Base class for FTP/FTPS transports relying on PHP's ext-ftp.
  *
- * This class builds on {@see AbstractClient} by:
+ * This class builds on {@see AbstractTransport} by:
  * - Ensuring the PHP "ftp" extension is available
  * - Managing connect/login/close lifecycle for FTP-family transports
  * - Implementing common FTP operations using an {@see FtpFunctionsInterface} adapter
@@ -33,7 +33,7 @@ use Psr\Log\LoggerInterface;
  * Concrete implementations must provide the low-level connection creation
  * via {@see doConnectFtp()}, e.g. FTP vs. FTPS differences.
  */
-abstract class AbstractFtpClient extends AbstractClient
+abstract class AbstractFtpTransport extends AbstractTransport
 {
     /**
      * Extension checker used to verify that required PHP extensions are loaded.
@@ -143,7 +143,7 @@ abstract class AbstractFtpClient extends AbstractClient
                     'warning' => $this->warnings->formatLastWarning(),
                 ]);
 
-                throw new ConnectionException(sprintf(
+                throw new ConnectionException(\sprintf(
                     'Unable to connect to server "%s" (FTP family).%s',
                     $this->host,
                     $this->warnings->formatLastWarning()
@@ -209,7 +209,7 @@ abstract class AbstractFtpClient extends AbstractClient
                     'warning' => $this->warnings->formatLastWarning(),
                 ]);
 
-                throw new AuthenticationException(sprintf(
+                throw new AuthenticationException(\sprintf(
                     'Login failed on "%s" for user "%s".%s',
                     $this->host,
                     $user,
@@ -284,16 +284,16 @@ abstract class AbstractFtpClient extends AbstractClient
                 'warning' => $this->warnings->formatLastWarning(),
             ]);
 
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to list files on "%s".%s',
                 $this->host,
                 $this->warnings->formatLastWarning()
             ));
         }
 
-        $filtered = array_values(array_filter(
+        $filtered = \array_values(\array_filter(
             $files,
-            static fn (string $file) => !str_starts_with(\basename($file), '.')
+            static fn (string $file) => !\str_starts_with(\basename($file), '.')
         ));
 
         return $filtered;
@@ -317,7 +317,7 @@ abstract class AbstractFtpClient extends AbstractClient
         /** @var array<int, string>|false $list */
         $list = $this->warnings->run(fn () => $this->ftp->rawlist($this->connection, $remoteDir, $recursive));
         if ($list === false) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to raw list "%s" on "%s".%s',
                 $remoteDir,
                 $this->host,
@@ -347,7 +347,7 @@ abstract class AbstractFtpClient extends AbstractClient
         /** @var array<int, array<string, string>>|false $list */
         $list = $this->warnings->run(fn () => $this->ftp->mlsd($this->connection, $remoteDir));
         if ($list === false) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to MLSD "%s" on "%s".%s',
                 $remoteDir,
                 $this->host,
@@ -373,7 +373,7 @@ abstract class AbstractFtpClient extends AbstractClient
         );
 
         if (!$ok) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Download "%s" from "%s" failed.%s',
                 $remoteFilename,
                 $this->host,
@@ -397,7 +397,7 @@ abstract class AbstractFtpClient extends AbstractClient
         );
 
         if (!$ok) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Upload "%s" to "%s" failed.%s',
                 $sourceFilePath,
                 $destinationFilename,
@@ -417,7 +417,7 @@ abstract class AbstractFtpClient extends AbstractClient
         $this->ensureFtpDirectory();
 
         $currentDir = $this->warnings->run(fn () => $this->ftp->pwd($this->connection));
-        if (!is_string($currentDir) || $currentDir === '') {
+        if (!\is_string($currentDir) || $currentDir === '') {
             return false;
         }
 
@@ -442,7 +442,7 @@ abstract class AbstractFtpClient extends AbstractClient
 
         $ok = $this->warnings->run(fn () => $this->ftp->delete($this->connection, $remotePath));
         if (!$ok) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to delete "%s" on "%s".%s',
                 $remotePath,
                 $this->host,
@@ -460,21 +460,21 @@ abstract class AbstractFtpClient extends AbstractClient
     {
         $this->ensureFtpDirectory();
 
-        $dir = trim($remoteDir);
+        $dir = \trim($remoteDir);
         if ($dir === '' || $dir === '.') {
             return;
         }
 
-        $isAbsolute = str_starts_with($dir, '/');
-        $dir = trim($dir, '/');
+        $isAbsolute = \str_starts_with($dir, '/');
+        $dir = \trim($dir, '/');
 
         if ($dir === '') {
             return;
         }
 
         /** @var list<non-empty-string> $parts */
-        $parts = array_values(array_filter(
-            explode('/', $dir),
+        $parts = \array_values(\array_filter(
+            \explode('/', $dir),
             static fn (string $p): bool => $p !== ''
         ));
 
@@ -501,7 +501,7 @@ abstract class AbstractFtpClient extends AbstractClient
                 $existsAsDirAfter = $this->doIsDirectory($current);
 
                 if (!$existsAsDirAfter) {
-                    throw new TransferException(sprintf(
+                    throw new TransferException(\sprintf(
                         'Unable to create directory "%s" on "%s".%s',
                         $current,
                         $this->host,
@@ -515,7 +515,7 @@ abstract class AbstractFtpClient extends AbstractClient
             $created = $this->warnings->run(fn () => $this->ftp->mkdir($this->connection, $remoteDir));
 
             if ($created === false) {
-                throw new TransferException(sprintf(
+                throw new TransferException(\sprintf(
                     'Unable to create directory "%s" on "%s".%s',
                     $remoteDir,
                     $this->host,
@@ -538,7 +538,7 @@ abstract class AbstractFtpClient extends AbstractClient
 
         $ok = $this->warnings->run(fn () => $this->ftp->rmdir($this->connection, $remoteDir));
         if (!$ok) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to remove directory "%s" on "%s".%s',
                 $remoteDir,
                 $this->host,
@@ -556,10 +556,10 @@ abstract class AbstractFtpClient extends AbstractClient
     {
         $this->ensureFtpDirectory();
 
-        $dir = trim($remoteDir);
+        $dir = \trim($remoteDir);
 
         if (!$this->doIsDirectory($dir)) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Path "%s" is not a directory on "%s".%s',
                 $dir,
                 $this->host,
@@ -570,7 +570,7 @@ abstract class AbstractFtpClient extends AbstractClient
         /** @var array<int, string>|false $files */
         $files = $this->warnings->run(fn () => $this->ftp->nlist($this->connection, $dir));
         if ($files === false) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to list directory "%s" on "%s".%s',
                 $dir,
                 $this->host,
@@ -578,9 +578,9 @@ abstract class AbstractFtpClient extends AbstractClient
             ));
         }
 
-        $entries = array_values(array_filter(
+        $entries = \array_values(\array_filter(
             $files,
-            static fn (string $p) => !str_ends_with($p, '/.') && !str_ends_with($p, '/..') && !in_array(\basename($p), ['.', '..'], true)
+            static fn (string $p) => !\str_ends_with($p, '/.') && !\str_ends_with($p, '/..') && !\in_array(\basename($p), ['.', '..'], true)
         ));
 
         foreach ($entries as $entry) {
@@ -594,7 +594,7 @@ abstract class AbstractFtpClient extends AbstractClient
 
             $ok = $this->warnings->run(fn () => $this->ftp->delete($this->connection, $candidate));
             if (!$ok) {
-                $joined = rtrim($dir, '/') . '/' . ltrim($candidate, '/');
+                $joined = \rtrim($dir, '/') . '/' . \ltrim($candidate, '/');
 
                 if ($this->doIsDirectory($joined)) {
                     $this->doRemoveDirectoryRecursive($joined);
@@ -603,7 +603,7 @@ abstract class AbstractFtpClient extends AbstractClient
 
                 $ok2 = $this->warnings->run(fn () => $this->ftp->delete($this->connection, $joined));
                 if (!$ok2) {
-                    throw new TransferException(sprintf(
+                    throw new TransferException(\sprintf(
                         'Unable to delete "%s" in "%s" on "%s".%s',
                         $candidate,
                         $dir,
@@ -616,7 +616,7 @@ abstract class AbstractFtpClient extends AbstractClient
 
         $ok = $this->warnings->run(fn () => $this->ftp->rmdir($this->connection, $dir));
         if (!$ok) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to remove directory "%s" on "%s".%s',
                 $dir,
                 $this->host,
@@ -636,7 +636,7 @@ abstract class AbstractFtpClient extends AbstractClient
 
         $ok = $this->warnings->run(fn () => $this->ftp->rename($this->connection, $from, $to));
         if (!$ok) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to rename "%s" to "%s" on "%s".%s',
                 $from,
                 $to,
@@ -679,7 +679,7 @@ abstract class AbstractFtpClient extends AbstractClient
 
         $result = $this->warnings->run(fn () => $this->ftp->chmod($this->connection, $mode, $remotePath));
         if ($result === false) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to chmod "%s" on "%s".%s',
                 $remotePath,
                 $this->host,
@@ -692,7 +692,7 @@ abstract class AbstractFtpClient extends AbstractClient
      * Ensure the remote working directory matches the base path from the URL.
      *
      * Many FTP servers treat operations as relative to the current working directory.
-     * This helper makes sure the session is positioned at {@see AbstractClient::$path}
+     * This helper makes sure the session is positioned at {@see AbstractTransport::$path}
      * before executing operations.
      *
      * @throws TransferException If the current directory cannot be determined or if chdir fails.
@@ -700,21 +700,21 @@ abstract class AbstractFtpClient extends AbstractClient
     private function ensureFtpDirectory(): void
     {
         $currentDir = $this->warnings->run(fn () => $this->ftp->pwd($this->connection));
-        if (!is_string($currentDir) || $currentDir === '') {
-            throw new TransferException(sprintf(
+        if (!\is_string($currentDir) || $currentDir === '') {
+            throw new TransferException(\sprintf(
                 'Unable to determine current directory on "%s".%s',
                 $this->host,
                 $this->warnings->formatLastWarning()
             ));
         }
 
-        $current = rtrim($currentDir, '/');
-        $target = rtrim($this->path, '/');
+        $current = \rtrim($currentDir, '/');
+        $target = \rtrim($this->path, '/');
 
         if ($current !== $target) {
             $ok = $this->warnings->run(fn () => $this->ftp->chdir($this->connection, $this->path));
             if (!$ok) {
-                throw new TransferException(sprintf(
+                throw new TransferException(\sprintf(
                     'Unable to change directory to "%s" on "%s".%s',
                     $this->path,
                     $this->host,

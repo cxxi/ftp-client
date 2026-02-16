@@ -16,15 +16,15 @@ use Cxxi\FtpClient\Infrastructure\Port\Ssh2FunctionsInterface;
 use Cxxi\FtpClient\Infrastructure\Port\StreamFunctionsInterface;
 use Cxxi\FtpClient\Model\ConnectionOptions;
 use Cxxi\FtpClient\Model\FtpUrl;
-use Cxxi\FtpClient\Service\Sftp\SftpClient;
+use Cxxi\FtpClient\Service\Sftp\SftpTransport;
 use Cxxi\FtpClient\Util\WarningCatcher;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
-#[CoversClass(SftpClient::class)]
-final class SftpClientTest extends TestCase
+#[CoversClass(SftpTransport::class)]
+final class SftpTransportTest extends TestCase
 {
     private function makeUrl(
         ?string $user = 'u',
@@ -41,14 +41,14 @@ final class SftpClientTest extends TestCase
         ?Ssh2FunctionsInterface $ssh2 = null,
         ?StreamFunctionsInterface $streams = null,
         ?FilesystemFunctionsInterface $fs = null
-    ): SftpClient {
+    ): SftpTransport {
         $options ??= new ConnectionOptions();
         $ext ??= $this->createMock(ExtensionCheckerInterface::class);
         $ssh2 ??= $this->createMock(Ssh2FunctionsInterface::class);
         $streams ??= $this->createMock(StreamFunctionsInterface::class);
         $fs ??= $this->createMock(FilesystemFunctionsInterface::class);
 
-        return new SftpClient(
+        return new SftpTransport(
             url: $this->makeUrl(),
             options: $options,
             logger: new NullLogger(),
@@ -121,10 +121,9 @@ final class SftpClientTest extends TestCase
             ->with('example.com', 22, ['hostkey' => 'custom-algo'])
             ->willReturn('__conn__');
 
-        // New behavior: no strict + no expected => do NOT fetch fingerprint.
         $ssh2->expects(self::never())->method('fingerprint');
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(port: null),
             options: new ConnectionOptions(hostKeyAlgo: 'custom-algo', strictHostKeyChecking: false, expectedFingerprint: null),
             logger: new NullLogger(),
@@ -167,7 +166,6 @@ final class SftpClientTest extends TestCase
 
     public function testConnectNormalizesExpectedFingerprintWithLowercasePrefix(): void
     {
-        // Simule les constantes ext-ssh2 en tests unitaires
         if (!\defined('SSH2_FINGERPRINT_MD5')) {
             \define('SSH2_FINGERPRINT_MD5', 1);
         }
@@ -202,7 +200,6 @@ final class SftpClientTest extends TestCase
 
     public function testConnectNormalizesExpectedFingerprintWithoutPrefix(): void
     {
-        // Simule les constantes ext-ssh2 en tests unitaires
         if (!\defined('SSH2_FINGERPRINT_MD5')) {
             \define('SSH2_FINGERPRINT_MD5', 1);
         }
@@ -219,13 +216,11 @@ final class SftpClientTest extends TestCase
         $ext = $this->createMock(ExtensionCheckerInterface::class);
         $ext->method('loaded')->with('ssh2')->willReturn(true);
 
-        // On veut un MD5 “sans prefix” => 32 hex chars
         $expectedHex = \str_repeat('1', 32);
 
         $ssh2 = $this->createMock(Ssh2FunctionsInterface::class);
         $ssh2->method('connect')->willReturn('__conn__');
 
-        // Retourne un MD5 avec ":" pour vérifier que la normalisation marche
         $ssh2->method('fingerprint')->with('__conn__', self::anything())->willReturn('11:11:11:11:11:11:11:11:11:11:11:11:11:11:11:11');
 
         $client = $this->makeClient(
@@ -240,7 +235,6 @@ final class SftpClientTest extends TestCase
 
     public function testConnectFingerprintMismatchThrowsAndInvalidatesConnection(): void
     {
-        // Simule les constantes ext-ssh2 en tests unitaires
         if (!\defined('SSH2_FINGERPRINT_MD5')) {
             \define('SSH2_FINGERPRINT_MD5', 1);
         }
@@ -260,7 +254,6 @@ final class SftpClientTest extends TestCase
         $ssh2 = $this->createMock(Ssh2FunctionsInterface::class);
         $ssh2->method('connect')->willReturn('__conn__');
 
-        // "ACTUAL" != "EXPECTED"
         $ssh2->method('fingerprint')->with('__conn__', self::anything())->willReturn('22:22:22:22:22:22:22:22:22:22:22:22:22:22:22:22');
 
         $client = $this->makeClient(
@@ -282,7 +275,6 @@ final class SftpClientTest extends TestCase
 
     public function testConnectThrowsWhenFingerprintCannotBeRetrieved(): void
     {
-        // Simule les constantes ext-ssh2 en tests unitaires
         if (!\defined('SSH2_FINGERPRINT_MD5')) {
             \define('SSH2_FINGERPRINT_MD5', 1);
         }
@@ -302,7 +294,6 @@ final class SftpClientTest extends TestCase
         $ssh2 = $this->createMock(Ssh2FunctionsInterface::class);
         $ssh2->method('connect')->willReturn('__conn__');
 
-        // Force l'appel à ssh2_fingerprint() via expectedFingerprint non-null
         $ssh2->expects(self::once())
             ->method('fingerprint')
             ->with('__conn__', self::anything())
@@ -444,8 +435,8 @@ final class SftpClientTest extends TestCase
         $out = $rm->invoke($client, $hex);
 
         self::assertSame([
-            'algo' => SftpClient::FINGERPRINT_ALGO_SHA1,
-            'fingerprint' => strtoupper($hex),
+            'algo' => SftpTransport::FINGERPRINT_ALGO_SHA1,
+            'fingerprint' => \strtoupper($hex),
         ], $out);
     }
 
@@ -479,7 +470,7 @@ final class SftpClientTest extends TestCase
         $ssh2 = $this->createMock(Ssh2FunctionsInterface::class);
         $ssh2->method('connect')->willReturn('__conn__');
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(user: null, pass: null),
             options: new ConnectionOptions(),
             logger: new NullLogger(),
@@ -622,7 +613,7 @@ final class SftpClientTest extends TestCase
         $fs->method('fileExists')->willReturn(true);
         $fs->method('isReadable')->willReturn(true);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(user: null, pass: null),
             options: new ConnectionOptions(),
             logger: new NullLogger(),
@@ -785,10 +776,6 @@ final class SftpClientTest extends TestCase
         $client->listFiles('/dir');
     }
 
-    // --- remainder of file unchanged (operations tests) ---
-    // The rest of the test file below this point is identical to your original,
-    // except the fingerprint-normalization tests at the end.
-
     public function testDownloadFileHappyPathWithTimeoutAndCloseBoth(): void
     {
         $ext = $this->createMock(ExtensionCheckerInterface::class);
@@ -821,7 +808,7 @@ final class SftpClientTest extends TestCase
         $fs->method('dirname')->with('/tmp/local.txt')->willReturn('/tmp');
         $fs->method('isDir')->with('/tmp')->willReturn(true);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(path: '/base'),
             options: new ConnectionOptions(timeout: 5),
             logger: new NullLogger(),
@@ -970,7 +957,7 @@ final class SftpClientTest extends TestCase
         $fs->method('fileExists')->with('/tmp/local.txt')->willReturn(true);
         $fs->method('isReadable')->with('/tmp/local.txt')->willReturn(true);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(path: '/base'),
             options: new ConnectionOptions(timeout: 5),
             logger: new NullLogger(),
@@ -1274,7 +1261,7 @@ final class SftpClientTest extends TestCase
             )
             ->willReturn(true);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(path: '/'),
             options: new ConnectionOptions(),
             logger: new NullLogger(),
@@ -1317,7 +1304,7 @@ final class SftpClientTest extends TestCase
             ->with(55, '/a/b', 0775, false)
             ->willReturn(false);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(path: '/'),
             options: new ConnectionOptions(),
             logger: new NullLogger(),
@@ -1355,7 +1342,7 @@ final class SftpClientTest extends TestCase
 
         $ssh2->method('sftpMkdir')->willReturn(false);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(path: '/'),
             options: new ConnectionOptions(),
             logger: new NullLogger(),
@@ -1434,7 +1421,7 @@ final class SftpClientTest extends TestCase
             ->with('__conn__', 'u', 'p')
             ->willReturn(true);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(path: '/base'),
             options: new ConnectionOptions(),
             logger: new NullLogger(),
@@ -1520,9 +1507,6 @@ final class SftpClientTest extends TestCase
         self::assertSame(456, $client->getMTime('/x'));
     }
 
-    /**
-     * ✅ Coverage: doGetSize/doGetMTime branches when sftpStat does NOT return an array.
-     */
     public function testGetSizeAndMTimeReturnNullWhenStatIsNotArray(): void
     {
         $ext = $this->createMock(ExtensionCheckerInterface::class);
@@ -1533,7 +1517,6 @@ final class SftpClientTest extends TestCase
         $ssh2->method('sftp')->willReturn(55);
         $ssh2->method('authPassword')->with('__conn__', 'u', 'p')->willReturn(true);
 
-        // not an array => doGetSize/doGetMTime should return null
         $ssh2->method('sftpStat')->willReturn(false);
 
         $client = $this->makeClient(ext: $ext, ssh2: $ssh2);
@@ -1543,9 +1526,6 @@ final class SftpClientTest extends TestCase
         self::assertNull($client->getMTime('/x'));
     }
 
-    /**
-     * ✅ Coverage: statGetInt() float cast + numeric-string cast branches.
-     */
     public function testGetSizeCastsFloatAndGetMTimeCastsNumericString(): void
     {
         $ext = $this->createMock(ExtensionCheckerInterface::class);
@@ -1557,8 +1537,8 @@ final class SftpClientTest extends TestCase
         $ssh2->method('authPassword')->with('__conn__', 'u', 'p')->willReturn(true);
 
         $ssh2->method('sftpStat')->willReturn([
-            'size' => 123.9,      // float => (int) 123
-            'mtime' => " 456 ",   // numeric string => (int) 456
+            'size' => 123.9,
+            'mtime' => " 456 ",
             'mode' => 0100000,
         ]);
 
@@ -1569,9 +1549,6 @@ final class SftpClientTest extends TestCase
         self::assertSame(456, $client->getMTime('/x'));
     }
 
-    /**
-     * ✅ Coverage: statGetInt() final "return null" when key exists but value is unsupported type.
-     */
     public function testGetSizeReturnsNullWhenStatValueIsNonNumericType(): void
     {
         $ext = $this->createMock(ExtensionCheckerInterface::class);
@@ -1582,7 +1559,6 @@ final class SftpClientTest extends TestCase
         $ssh2->method('sftp')->willReturn(55);
         $ssh2->method('authPassword')->with('__conn__', 'u', 'p')->willReturn(true);
 
-        // size exists but is an array => statGetInt should fall through to final return null
         $ssh2->method('sftpStat')->willReturn([
             'size' => ['nope'],
             'mode' => 0100000,
@@ -1700,7 +1676,7 @@ final class SftpClientTest extends TestCase
         $ssh2->expects(self::exactly(2))->method('sftpUnlink')->willReturn(true);
         $ssh2->expects(self::exactly(2))->method('sftpRmdir')->willReturn(true);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(path: '/'),
             options: new ConnectionOptions(),
             logger: new NullLogger(),
@@ -1727,7 +1703,7 @@ final class SftpClientTest extends TestCase
         $streams = $this->createMock(StreamFunctionsInterface::class);
         $fs = $this->createMock(FilesystemFunctionsInterface::class);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(),
             options: new ConnectionOptions(),
             logger: new NullLogger(),
@@ -1781,7 +1757,7 @@ final class SftpClientTest extends TestCase
         $fs->method('dirname')->willReturn('/tmp');
         $fs->method('isDir')->willReturn(true);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(path: '/base'),
             options: new ConnectionOptions(timeout: 0),
             logger: new NullLogger(),
@@ -1820,7 +1796,7 @@ final class SftpClientTest extends TestCase
         $fs->method('fileExists')->willReturn(true);
         $fs->method('isReadable')->willReturn(true);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(path: '/base'),
             options: new ConnectionOptions(timeout: 0),
             logger: new NullLogger(),
@@ -1884,7 +1860,6 @@ final class SftpClientTest extends TestCase
             ssh2: $ssh2
         );
 
-        // Not strict and expected parses to null -> no fingerprint validation performed.
         $client->connect();
         self::assertTrue($client->isConnected());
     }
@@ -1906,7 +1881,7 @@ final class SftpClientTest extends TestCase
             }
         };
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(),
             options: new ConnectionOptions(),
             logger: $throwingLogger,
@@ -1943,7 +1918,7 @@ final class SftpClientTest extends TestCase
         $fs->method('dirname')->willReturn('/tmp');
         $fs->method('isDir')->willReturn(true);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(path: '/base'),
             options: new ConnectionOptions(timeout: 0),
             logger: new NullLogger(),
@@ -1981,7 +1956,7 @@ final class SftpClientTest extends TestCase
         $fs->method('fileExists')->willReturn(true);
         $fs->method('isReadable')->willReturn(true);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(path: '/base'),
             options: new ConnectionOptions(timeout: 0),
             logger: new NullLogger(),
@@ -2032,7 +2007,7 @@ final class SftpClientTest extends TestCase
             ->with(55, '/a', 0775, false)
             ->willReturn(true);
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(path: '/'),
             options: new ConnectionOptions(),
             logger: new NullLogger(),
@@ -2207,6 +2182,7 @@ final class SftpClientTest extends TestCase
         if (!\defined('SSH2_FINGERPRINT_MD5')) {
             \define('SSH2_FINGERPRINT_MD5', 1);
         }
+
         if (!\defined('SSH2_FINGERPRINT_SHA1')) {
             \define('SSH2_FINGERPRINT_SHA1', 2);
         }
@@ -2217,7 +2193,7 @@ final class SftpClientTest extends TestCase
         $ssh2 = $this->createMock(Ssh2FunctionsInterface::class);
         $ssh2->method('connect')->willReturn('__conn__');
 
-        $client = new SftpClient(
+        $client = new SftpTransport(
             url: $this->makeUrl(),
             options: new ConnectionOptions(),
             logger: new NullLogger(),
@@ -2234,6 +2210,6 @@ final class SftpClientTest extends TestCase
         $this->expectException(MissingExtensionException::class);
         $this->expectExceptionMessage('ext-ssh2 is required');
 
-        $rm->invoke($client, SftpClient::FINGERPRINT_ALGO_MD5);
+        $rm->invoke($client, SftpTransport::FINGERPRINT_ALGO_MD5);
     }
 }

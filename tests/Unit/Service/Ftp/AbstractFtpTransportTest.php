@@ -15,14 +15,14 @@ use Cxxi\FtpClient\Infrastructure\Port\FilesystemFunctionsInterface;
 use Cxxi\FtpClient\Infrastructure\Port\FtpFunctionsInterface;
 use Cxxi\FtpClient\Model\ConnectionOptions;
 use Cxxi\FtpClient\Model\FtpUrl;
-use Cxxi\FtpClient\Service\Ftp\AbstractFtpClient;
+use Cxxi\FtpClient\Service\Ftp\AbstractFtpTransport;
 use Cxxi\FtpClient\Util\WarningCatcher;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
-#[CoversClass(AbstractFtpClient::class)]
-final class AbstractFtpClientTest extends TestCase
+#[CoversClass(AbstractFtpTransport::class)]
+final class AbstractFtpTransportTest extends TestCase
 {
     private function makeUrl(
         Protocol $proto = Protocol::FTP,
@@ -54,7 +54,7 @@ final class AbstractFtpClientTest extends TestCase
         ?FilesystemFunctionsInterface $fs = null,
         mixed $connectResult = null,
         ?FtpUrl $url = null
-    ): AbstractFtpClient {
+    ): AbstractFtpTransport {
         $options ??= new ConnectionOptions();
         $ext ??= $this->createMock(ExtensionCheckerInterface::class);
         $ftp ??= $this->createMock(FtpFunctionsInterface::class);
@@ -70,7 +70,7 @@ final class AbstractFtpClientTest extends TestCase
         /** @var resource|false $connectResultTyped */
         $connectResultTyped = $connectResult;
 
-        return new class ($url, $options, new NullLogger(), $ext, $ftp, $fs, new WarningCatcher(), $connectResultTyped) extends AbstractFtpClient {
+        return new class ($url, $options, new NullLogger(), $ext, $ftp, $fs, new WarningCatcher(), $connectResultTyped) extends AbstractFtpTransport {
             /**
              * @var resource|false
              */
@@ -107,7 +107,7 @@ final class AbstractFtpClientTest extends TestCase
         };
     }
 
-    private function connectAndLogin(AbstractFtpClient $client, string $user = 'u', string $pass = 'p'): void
+    private function connectAndLogin(AbstractFtpTransport $client, string $user = 'u', string $pass = 'p'): void
     {
         $client->connect()->loginWithPassword($user, $pass);
     }
@@ -352,7 +352,7 @@ final class AbstractFtpClientTest extends TestCase
             ->with(self::callback(static fn ($conn): bool => \is_resource($conn)), true)
             ->willReturn(true);
 
-        $ftp->expects(self::once())->method('pwd')->willReturn('/base'); // already on base
+        $ftp->expects(self::once())->method('pwd')->willReturn('/base');
 
         $ftp->expects(self::once())
             ->method('nlist')
@@ -1308,7 +1308,7 @@ final class AbstractFtpClientTest extends TestCase
             $ftp,
             $this->createMock(FilesystemFunctionsInterface::class),
             new WarningCatcher()
-        ) extends AbstractFtpClient {
+        ) extends AbstractFtpTransport {
             /**
              * @return resource|false
              *

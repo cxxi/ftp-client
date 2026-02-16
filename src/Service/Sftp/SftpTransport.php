@@ -19,7 +19,7 @@ use Cxxi\FtpClient\Infrastructure\Port\Ssh2FunctionsInterface;
 use Cxxi\FtpClient\Infrastructure\Port\StreamFunctionsInterface;
 use Cxxi\FtpClient\Model\ConnectionOptions;
 use Cxxi\FtpClient\Model\FtpUrl;
-use Cxxi\FtpClient\Service\AbstractClient;
+use Cxxi\FtpClient\Service\AbstractTransport;
 use Cxxi\FtpClient\Util\Path;
 use Cxxi\FtpClient\Util\WarningCatcher;
 use Psr\Log\LoggerInterface;
@@ -35,9 +35,9 @@ use Psr\Log\LoggerInterface;
  * - Optional strict host key checking using an expected MD5/SHA1 fingerprint (as supported by ext-ssh2)
  * - Password and public key authentication
  * - Common filesystem operations (list, upload, download, delete, mkdir, rmdir, chmod, stat-based checks)
- * - Uses {@see AbstractClient::withRetry()} for retriable, protocol-specific operations
+ * - Uses {@see AbstractTransport::withRetry()} for retriable, protocol-specific operations
  */
-final class SftpClient extends AbstractClient implements SftpClientTransportInterface
+final class SftpTransport extends AbstractTransport implements SftpClientTransportInterface
 {
     /**
      * Default host key algorithm used when not configured in {@see ConnectionOptions}.
@@ -171,7 +171,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
                     'warning' => $this->warnings->formatLastWarning(),
                 ]);
 
-                throw new ConnectionException(sprintf(
+                throw new ConnectionException(\sprintf(
                     'Unable to connect to server "%s" (SFTP).%s',
                     $this->host,
                     $this->warnings->formatLastWarning()
@@ -225,7 +225,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             $ok = $this->warnings->run(fn () => $this->ssh2->authPassword($this->connection, $user, $pass));
 
             if (!$ok) {
-                throw new AuthenticationException(sprintf(
+                throw new AuthenticationException(\sprintf(
                     'Login failed on "%s" for user "%s".%s',
                     $this->host,
                     $user,
@@ -307,7 +307,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
                     'warning' => $this->warnings->formatLastWarning(),
                 ]);
 
-                throw new AuthenticationException(sprintf(
+                throw new AuthenticationException(\sprintf(
                     'Public key authentication failed for user "%s" on host "%s".%s',
                     $user,
                     $this->host,
@@ -371,12 +371,12 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             throw new ConnectionException('Failed to initialize SFTP subsystem.');
         }
 
-        $dirPath = rtrim($this->normalizeRemotePath($remoteDir), '/');
-        $uri = sprintf('ssh2.sftp://%d/%s', (int) $sftp, ltrim($dirPath, '/'));
+        $dirPath = \rtrim($this->normalizeRemotePath($remoteDir), '/');
+        $uri = \sprintf('ssh2.sftp://%d/%s', (int) $sftp, \ltrim($dirPath, '/'));
 
         $handle = $this->warnings->run(fn () => $this->streams->opendir($uri));
         if ($handle === false) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to open remote directory "%s" on "%s".',
                 $dirPath,
                 $this->host
@@ -392,7 +392,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
                     break;
                 }
 
-                if ($entry === '.' || $entry === '..' || str_starts_with($entry, '.')) {
+                if ($entry === '.' || $entry === '..' || \str_starts_with($entry, '.')) {
                     continue;
                 }
 
@@ -422,11 +422,11 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         }
 
         $remotePath = $this->normalizeRemotePath($remoteFilename);
-        $remoteUri = sprintf('ssh2.sftp://%d/%s', (int) $sftp, ltrim($remotePath, '/'));
+        $remoteUri = \sprintf('ssh2.sftp://%d/%s', (int) $sftp, \ltrim($remotePath, '/'));
 
         $remote = $this->warnings->run(fn () => $this->streams->fopen($remoteUri, 'r'));
         if ($remote === false) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to open remote file "%s" for reading on "%s".',
                 $remotePath,
                 $this->host
@@ -436,7 +436,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $local = $this->warnings->run(fn () => $this->streams->fopen($localFilePath, 'w'));
         if ($local === false) {
             $this->warnings->run(fn () => $this->streams->fclose($remote));
-            throw new TransferException(sprintf('Unable to open local file "%s" for writing.', $localFilePath));
+            throw new TransferException(\sprintf('Unable to open local file "%s" for writing.', $localFilePath));
         }
 
         $timeout = $this->options->timeout;
@@ -448,7 +448,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         try {
             $copied = $this->warnings->run(fn () => $this->streams->streamCopyToStream($remote, $local));
             if ($copied === false) {
-                throw new TransferException(sprintf('Download "%s" from "%s" failed.', $remotePath, $this->host));
+                throw new TransferException(\sprintf('Download "%s" from "%s" failed.', $remotePath, $this->host));
             }
         } finally {
             $this->warnings->run(fn () => $this->streams->fclose($remote));
@@ -473,17 +473,17 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         }
 
         $destinationPath = $this->normalizeRemotePath($destinationFilename);
-        $remoteUri = sprintf('ssh2.sftp://%d/%s', (int) $sftp, ltrim($destinationPath, '/'));
+        $remoteUri = \sprintf('ssh2.sftp://%d/%s', (int) $sftp, \ltrim($destinationPath, '/'));
 
         $local = $this->warnings->run(fn () => $this->streams->fopen($sourceFilePath, 'r'));
         if ($local === false) {
-            throw new TransferException(sprintf('Unable to open local file "%s".', $sourceFilePath));
+            throw new TransferException(\sprintf('Unable to open local file "%s".', $sourceFilePath));
         }
 
         $remote = $this->warnings->run(fn () => $this->streams->fopen($remoteUri, 'w'));
         if ($remote === false) {
             $this->warnings->run(fn () => $this->streams->fclose($local));
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to open remote file "%s" for writing on "%s".',
                 $destinationPath,
                 $this->host
@@ -499,7 +499,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         try {
             $copied = $this->warnings->run(fn () => $this->streams->streamCopyToStream($local, $remote));
             if ($copied === false) {
-                throw new TransferException(sprintf(
+                throw new TransferException(\sprintf(
                     'Upload "%s" to "%s" failed.',
                     $sourceFilePath,
                     $destinationPath
@@ -563,7 +563,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
 
         $ok = $this->warnings->run(fn () => $this->ssh2->sftpUnlink($sftp, $fullPath));
         if (!$ok) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to delete "%s" on "%s".%s',
                 $fullPath,
                 $this->host,
@@ -598,15 +598,15 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             return;
         }
 
-        $isAbsolute = str_starts_with($dir, '/');
-        $dir = trim($dir, '/');
+        $isAbsolute = \str_starts_with($dir, '/');
+        $dir = \trim($dir, '/');
         if ($dir === '') {
             return;
         }
 
         /** @var list<non-empty-string> $parts */
-        $parts = array_values(array_filter(
-            explode('/', $dir),
+        $parts = \array_values(\array_filter(
+            \explode('/', $dir),
             static fn (string $p): bool => $p !== ''
         ));
 
@@ -648,7 +648,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
                 }
 
                 if (!$existsAsDir) {
-                    throw new TransferException(sprintf(
+                    throw new TransferException(\sprintf(
                         'Unable to create directory "%s" on "%s".%s',
                         $current,
                         $this->host,
@@ -678,7 +678,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
 
         $ok = $this->warnings->run(fn () => $this->ssh2->sftpRmdir($sftp, $fullPath));
         if (!$ok) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to remove directory "%s" on "%s".%s',
                 $fullPath,
                 $this->host,
@@ -698,7 +698,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $this->assertSsh2Extension();
 
         if (!$this->doIsDirectory($remoteDir)) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Path "%s" is not a directory on "%s".%s',
                 $remoteDir,
                 $this->host,
@@ -709,7 +709,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $entries = $this->doListFiles($remoteDir);
 
         foreach ($entries as $name) {
-            $child = rtrim($remoteDir, '/') . '/' . ltrim($name, '/');
+            $child = \rtrim($remoteDir, '/') . '/' . \ltrim($name, '/');
 
             if ($this->doIsDirectory($child)) {
                 $this->doRemoveDirectoryRecursive($child);
@@ -738,7 +738,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
 
         $ok = $this->warnings->run(fn () => $this->ssh2->sftpRename($sftp, $fromPath, $toPath));
         if (!$ok) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to rename "%s" to "%s" on "%s".%s',
                 $fromPath,
                 $toPath,
@@ -815,7 +815,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
 
         $ok = $this->warnings->run(fn () => $this->ssh2->sftpChmod($sftp, $fullPath, $mode));
         if (!$ok) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Unable to chmod "%s" on "%s".%s',
                 $fullPath,
                 $this->host,
@@ -841,7 +841,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         );
 
         if ($sftp === false) {
-            throw new ConnectionException(sprintf(
+            throw new ConnectionException(\sprintf(
                 'Failed to initialize SFTP subsystem.%s',
                 $this->warnings->formatLastWarning()
             ));
@@ -873,7 +873,6 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             ));
         }
 
-        // No expectation => no verification (unless strict, handled above)
         if ($expectedParsed === null) {
             return;
         }
@@ -886,7 +885,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $this->logger->info('SFTP transport server fingerprint retrieved', [
             'host' => $this->host,
             'port' => $this->port ?? 22,
-            'fingerprintAlgo' => strtoupper($algo),
+            'fingerprintAlgo' => \strtoupper($algo),
             'fingerprint' => \substr($actual, 0, 12) . '…',
         ]);
 
@@ -895,7 +894,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             throw new ConnectionException(\sprintf(
                 'SFTP host key fingerprint mismatch for "%s" (%s).',
                 $this->host,
-                strtoupper($algo)
+                \strtoupper($algo)
             ));
         }
     }
@@ -925,13 +924,12 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
 
         if ($flagConst === null || !\defined($flagConst)) {
             $this->invalidateConnection();
-            throw new MissingExtensionException(sprintf(
+            throw new MissingExtensionException(\sprintf(
                 'Fingerprint algorithm "%s" is not supported by ext-ssh2. Available algorithms: MD5, SHA1.',
                 $algo
             ));
         }
 
-        // HEX is the default, but we make it explicit for clarity/consistency.
         if (!\defined('SSH2_FINGERPRINT_HEX')) {
             $this->invalidateConnection();
             throw new MissingExtensionException('ext-ssh2 is required for SFTP operations.');
@@ -1027,7 +1025,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
                 $algo = self::FINGERPRINT_ALGO_SHA1;
             } else {
                 $this->invalidateConnection();
-                throw new ConnectionException(sprintf(
+                throw new ConnectionException(\sprintf(
                     'Invalid expected fingerprint format for "%s". Provide "MD5:<hex>" or "SHA1:<hex>".',
                     $this->host
                 ));
@@ -1037,9 +1035,9 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $expectedLen = $algo === self::FINGERPRINT_ALGO_MD5 ? 32 : 40;
         if (\strlen($normalized) !== $expectedLen) {
             $this->invalidateConnection();
-            throw new ConnectionException(sprintf(
+            throw new ConnectionException(\sprintf(
                 'Invalid %s fingerprint length for "%s".',
-                strtoupper($algo),
+                \strtoupper($algo),
                 $this->host
             ));
         }
@@ -1067,12 +1065,8 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             return '';
         }
 
-        // Remove common separators
         $v = \str_replace([':', ' ', "\t", "\n", "\r"], '', $v);
-
-        // Keep only hex chars
         $v = \preg_replace('/[^0-9a-fA-F]/', '', $v) ?? '';
-
         $v = \strtoupper($v);
 
         return $v;
@@ -1105,7 +1099,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             return $this->path;
         }
 
-        return str_starts_with($p, '/') ? $p : Path::joinRemote($this->path, $p);
+        return \str_starts_with($p, '/') ? $p : Path::joinRemote($this->path, $p);
     }
 
     /**

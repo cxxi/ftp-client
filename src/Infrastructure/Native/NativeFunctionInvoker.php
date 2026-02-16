@@ -27,7 +27,7 @@ final class NativeFunctionInvoker implements NativeFunctionInvokerInterface
         $fqn = '\\' . $function;
 
         if (!\is_callable($fqn)) {
-            throw new \InvalidArgumentException(sprintf('Function "%s" is not callable.', $function));
+            throw new \InvalidArgumentException(\sprintf('Function "%s" is not callable.', $function));
         }
 
         return \call_user_func_array($fqn, $args);

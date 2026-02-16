@@ -10,26 +10,26 @@ use Cxxi\FtpClient\Infrastructure\Port\FilesystemFunctionsInterface;
 use Cxxi\FtpClient\Infrastructure\Port\FtpFunctionsInterface;
 use Cxxi\FtpClient\Model\ConnectionOptions;
 use Cxxi\FtpClient\Model\FtpUrl;
-use Cxxi\FtpClient\Service\Ftp\FtpsClient;
+use Cxxi\FtpClient\Service\Ftp\FtpTransport;
 use Cxxi\FtpClient\Util\WarningCatcher;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
-#[CoversClass(FtpsClient::class)]
-final class FtpsClientTest extends TestCase
+#[CoversClass(FtpTransport::class)]
+final class FtpTransportTest extends TestCase
 {
     public function testDoConnectFtpUsesDefaultPort21WhenUrlPortIsNull(): void
     {
         $ftp = $this->createMock(FtpFunctionsInterface::class);
         $ftp
             ->expects(self::once())
-            ->method('sslConnect')
+            ->method('connect')
             ->with('example.com', 21, null)
             ->willReturn('HANDLE');
 
-        $client = new FtpsClient(
-            url: new FtpUrl(Protocol::FTPS, 'example.com', null, null, null, '/'),
+        $client = new FtpTransport(
+            url: new FtpUrl(Protocol::FTP, 'example.com', null, null, null, '/'),
             options: new ConnectionOptions(timeout: null),
             logger: new NullLogger(),
             extensions: $this->createMock(ExtensionCheckerInterface::class),
@@ -51,13 +51,13 @@ final class FtpsClientTest extends TestCase
         $ftp = $this->createMock(FtpFunctionsInterface::class);
         $ftp
             ->expects(self::once())
-            ->method('sslConnect')
-            ->with('example.com', 2121, 7)
+            ->method('connect')
+            ->with('example.com', 2121, 10)
             ->willReturn('HANDLE2');
 
-        $client = new FtpsClient(
-            url: new FtpUrl(Protocol::FTPS, 'example.com', 2121, null, null, '/'),
-            options: new ConnectionOptions(timeout: 7),
+        $client = new FtpTransport(
+            url: new FtpUrl(Protocol::FTP, 'example.com', 2121, null, null, '/'),
+            options: new ConnectionOptions(timeout: 10),
             logger: new NullLogger(),
             extensions: $this->createMock(ExtensionCheckerInterface::class),
             ftp: $ftp,
@@ -68,7 +68,7 @@ final class FtpsClientTest extends TestCase
         $m = new \ReflectionMethod($client, 'doConnectFtp');
         $m->setAccessible(true);
 
-        $handle = $m->invoke($client, 7);
+        $handle = $m->invoke($client, 10);
 
         self::assertSame('HANDLE2', $handle);
     }

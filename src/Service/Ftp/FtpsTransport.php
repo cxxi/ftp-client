@@ -22,7 +22,7 @@ use Psr\Log\LoggerInterface;
  * Note: This class focuses on establishing the FTPS connection. TLS negotiation
  * details are handled by ext-ftp / the underlying OpenSSL stack and server settings.
  */
-final class FtpsClient extends AbstractFtpClient implements FtpClientTransportInterface
+final class FtpsTransport extends AbstractFtpTransport implements FtpClientTransportInterface
 {
     /**
      * @param FtpUrl $url Parsed FTP URL (protocol, host, port, credentials, path).

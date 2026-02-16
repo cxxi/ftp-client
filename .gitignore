@@ -1,7 +1,6 @@
 /vendor
 /var
 /coverage
-/coverage.xml
 
 .php-cs-fixer.cache
 .phpunit.cache
@@ -15,7 +14,6 @@
 
 .DS_Store
 Thumbs.db
-d
 *.log
 
 docker-compose.override.yml

@@ -13,30 +13,33 @@ services:
     volumes:
       - ftps_user_home:/home/pureftpd
       - integration_state:/etc/ssl/private
-    command: ["/run.sh", "-c", "30", "-C", "10", "-l", "puredb:/etc/pure-ftpd/pureftpd.pdb", "-E", "-j", "-P", "ftps", "-p", "22100:22110", "-Y", "2"]
+    command: [
+      "/run.sh", "-c", "30", "-C", "10", "-l", 
+      "puredb:/etc/pure-ftpd/pureftpd.pdb", "-E", "-j", "-P", "ftps", "-p", "22100:22110", "-Y", "2"
+    ]
 
   ftps-cert:
     image: alpine:3.20
     volumes:
       - integration_state:/state
-      - ./bin/ftps-certificate:/usr/local/bin/ftps-certificate:ro
+      - ../bin/ftps-certificate:/usr/local/bin/ftps-certificate:ro
     entrypoint: ["/bin/sh", "-lc", "apk add --no-cache openssl >/dev/null 2>&1 && ftps-certificate"]
 
   php:
     image: ftp-client-php-ftps
     build:
-      context: .
-      dockerfile: Dockerfile.integration.ftps
+      context: ../..
+      dockerfile: docker/Dockerfile.integration.ftps
     working_dir: /app
     volumes:
-      - ./:/app
+      - ../..:/app
       - integration_state:/state
     environment:
       FTPS_HOST: ftps
       FTPS_PORT: 21
       FTPS_USER: test
       FTPS_PASS: test
-    command: ["bash", "-lc", "bin/integration"]
+    command: ["bash", "-lc", "docker/bin/integration"]
 
 volumes:
   integration_state:

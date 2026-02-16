@@ -18,18 +18,18 @@ services:
   php:
     image: ftp-client-php-ftp
     build:
-      context: .
-      dockerfile: Dockerfile.integration.ftp
+      context: ../..
+      dockerfile: docker/Dockerfile.integration.ftp
     working_dir: /app
     volumes:
-      - ./:/app
+      - ../..:/app
       - integration_state:/state
     environment:
       FTP_HOST: ftp
       FTP_PORT: 21
       FTP_USER: test
       FTP_PASS: test
-    command: ["bash", "-lc", "bin/integration"]
+    command: ["bash", "-lc", "docker/bin/integration"]
 
 volumes:
   integration_state:

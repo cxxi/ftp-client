@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cxxi\FtpClient\Tests\Integration\Ftps;
 
+use Cxxi\FtpClient\Contracts\ClientTransportInterface;
 use Cxxi\FtpClient\FtpClient;
 use Cxxi\FtpClient\Model\ConnectionOptions;
 use Cxxi\FtpClient\Tests\Support\Env;
@@ -30,11 +31,11 @@ abstract class FtpsIntegrationTestCase extends TestCase
             Env::string('FTPS_PASS', 'test'),
             Env::string('FTPS_HOST', 'ftps'),
             Env::int('FTPS_PORT', 21),
-            ltrim($path, '/')
+            \ltrim($path, '/')
         );
     }
 
-    protected function client(?ConnectionOptions $options = null): \Cxxi\FtpClient\Contracts\ClientTransportInterface
+    protected function client(?ConnectionOptions $options = null): ClientTransportInterface
     {
         $this->requireFtps();
 

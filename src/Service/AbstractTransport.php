@@ -30,7 +30,7 @@ use Psr\Log\NullLogger;
  * Concrete transports (FTP, FTPS, SFTP, ...) must implement the low-level
  * {@see do*} methods that perform the actual protocol-specific work.
  */
-abstract class AbstractClient implements ClientTransportInterface
+abstract class AbstractTransport implements ClientTransportInterface
 {
     /**
      * Native connection handle.
@@ -168,7 +168,7 @@ abstract class AbstractClient implements ClientTransportInterface
         $readable = $this->warnings->run(fn () => $this->fs->isReadable($sourceFilePath));
 
         if (!$exists || !$readable) {
-            throw new TransferException(sprintf(
+            throw new TransferException(\sprintf(
                 'Local file "%s" does not exist or is not readable.',
                 $sourceFilePath
             ));
@@ -210,7 +210,7 @@ abstract class AbstractClient implements ClientTransportInterface
         $this->logger->debug('Transport listFiles ok', [
             'host' => $this->host,
             'remoteDir' => $remoteDir,
-            'count' => count($files),
+            'count' => \count($files),
         ]);
 
         return $files;
@@ -241,7 +241,7 @@ abstract class AbstractClient implements ClientTransportInterface
             $isDirAfter = $this->warnings->run(fn () => $this->fs->isDir($localDir));
 
             if (!$ok && !$isDirAfter) {
-                throw new TransferException(sprintf('Unable to create local directory "%s".', $localDir));
+                throw new TransferException(\sprintf('Unable to create local directory "%s".', $localDir));
             }
         }
 
@@ -361,7 +361,7 @@ abstract class AbstractClient implements ClientTransportInterface
     {
         $this->assertReadyForTransfer('remove directory recursively');
 
-        $trimmed = trim($remoteDir);
+        $trimmed = \trim($remoteDir);
         if ($trimmed === '' || $trimmed === '.' || $trimmed === '..' || $trimmed === '/') {
             throw new TransferException('Refusing to remove directory recursively: invalid or unsafe target.');
         }
@@ -569,10 +569,10 @@ abstract class AbstractClient implements ClientTransportInterface
     protected function assertReadyForTransfer(string $operation): void
     {
         if (!$this->isConnected()) {
-            throw new TransferException(sprintf('Cannot %s: connection has not been established yet.', $operation));
+            throw new TransferException(\sprintf('Cannot %s: connection has not been established yet.', $operation));
         }
         if (!$this->isAuthenticated()) {
-            throw new TransferException(sprintf('Cannot %s: session is not authenticated.', $operation));
+            throw new TransferException(\sprintf('Cannot %s: session is not authenticated.', $operation));
         }
     }
 
@@ -599,7 +599,7 @@ abstract class AbstractClient implements ClientTransportInterface
      */
     protected function withRetry(string $operation, callable $fn, bool $safe = true): mixed
     {
-        $max = max(0, $this->options->retryMax);
+        $max = \max(0, $this->options->retryMax);
 
         if ($max === 0) {
             return $fn();
@@ -609,7 +609,7 @@ abstract class AbstractClient implements ClientTransportInterface
             return $fn();
         }
 
-        $delayMs = max(0, $this->options->retryDelayMs);
+        $delayMs = \max(0, $this->options->retryDelayMs);
 
         $backoff = $this->options->retryBackoff;
         if ($backoff <= 0) {
@@ -653,14 +653,14 @@ abstract class AbstractClient implements ClientTransportInterface
                     $actual = $sleepMs;
 
                     if ($jitter) {
-                        $factor = mt_rand(50, 150) / 100;
-                        $actual = (int) round($sleepMs * $factor);
+                        $factor = \mt_rand(50, 150) / 100;
+                        $actual = (int) \round($sleepMs * $factor);
                     }
 
-                    usleep(max(0, $actual) * 1000);
+                    \usleep(\max(0, $actual) * 1000);
                 }
 
-                $sleepMs = (int) round($sleepMs * $backoff);
+                $sleepMs = (int) \round($sleepMs * $backoff);
             }
         }
     }

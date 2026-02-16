@@ -7,7 +7,7 @@ namespace Cxxi\FtpClient;
 use Cxxi\FtpClient\Contracts\ClientTransportFactoryInterface;
 use Cxxi\FtpClient\Contracts\ClientTransportInterface;
 use Cxxi\FtpClient\Model\ConnectionOptions;
-use Cxxi\FtpClient\Service\ClientFactory;
+use Cxxi\FtpClient\Service\ClientTransportFactory;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -69,20 +69,20 @@ final class FtpClient
      * Resolve the transport factory instance.
      *
      * Returns the overridden factory when provided (typically in tests),
-     * otherwise falls back to the default {@see ClientFactory}.
+     * otherwise falls back to the default {@see ClientTransportFactory}.
      *
      * @return ClientTransportFactoryInterface
      */
     private static function factory(): ClientTransportFactoryInterface
     {
-        return self::$factoryOverride ?? new ClientFactory();
+        return self::$factoryOverride ?? new ClientTransportFactory();
     }
 
     /**
      * Optional factory override used mainly for testing purposes.
      *
      * When set, this factory will be used instead of the default
-     * {@see ClientFactory} instance.
+     * {@see ClientTransportFactory} instance.
      *
      * @internal
      */
