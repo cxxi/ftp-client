@@ -117,7 +117,7 @@ No silent trust of unknown hosts.
 Works in:
 
 * Plain PHP scripts
-* Symfony (recommended via the [CxxiFtpClientBundle](https://github.com/cxxi/ftp-client-bundle))
+* Symfony (recommended via the [FtpClientBundle](https://github.com/cxxi/ftp-client-bundle))
 * Laravel
 * CLI workers
 * Cron jobs
