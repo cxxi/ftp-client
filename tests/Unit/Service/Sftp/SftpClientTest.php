@@ -1520,6 +1520,80 @@ final class SftpClientTest extends TestCase
         self::assertSame(456, $client->getMTime('/x'));
     }
 
+    /**
+     * ✅ Coverage: doGetSize/doGetMTime branches when sftpStat does NOT return an array.
+     */
+    public function testGetSizeAndMTimeReturnNullWhenStatIsNotArray(): void
+    {
+        $ext = $this->createMock(ExtensionCheckerInterface::class);
+        $ext->method('loaded')->with('ssh2')->willReturn(true);
+
+        $ssh2 = $this->createMock(Ssh2FunctionsInterface::class);
+        $ssh2->method('connect')->willReturn('__conn__');
+        $ssh2->method('sftp')->willReturn(55);
+        $ssh2->method('authPassword')->with('__conn__', 'u', 'p')->willReturn(true);
+
+        // not an array => doGetSize/doGetMTime should return null
+        $ssh2->method('sftpStat')->willReturn(false);
+
+        $client = $this->makeClient(ext: $ext, ssh2: $ssh2);
+        $client->connect()->loginWithPassword('u', 'p');
+
+        self::assertNull($client->getSize('/x'));
+        self::assertNull($client->getMTime('/x'));
+    }
+
+    /**
+     * ✅ Coverage: statGetInt() float cast + numeric-string cast branches.
+     */
+    public function testGetSizeCastsFloatAndGetMTimeCastsNumericString(): void
+    {
+        $ext = $this->createMock(ExtensionCheckerInterface::class);
+        $ext->method('loaded')->with('ssh2')->willReturn(true);
+
+        $ssh2 = $this->createMock(Ssh2FunctionsInterface::class);
+        $ssh2->method('connect')->willReturn('__conn__');
+        $ssh2->method('sftp')->willReturn(55);
+        $ssh2->method('authPassword')->with('__conn__', 'u', 'p')->willReturn(true);
+
+        $ssh2->method('sftpStat')->willReturn([
+            'size' => 123.9,      // float => (int) 123
+            'mtime' => " 456 ",   // numeric string => (int) 456
+            'mode' => 0100000,
+        ]);
+
+        $client = $this->makeClient(ext: $ext, ssh2: $ssh2);
+        $client->connect()->loginWithPassword('u', 'p');
+
+        self::assertSame(123, $client->getSize('/x'));
+        self::assertSame(456, $client->getMTime('/x'));
+    }
+
+    /**
+     * ✅ Coverage: statGetInt() final "return null" when key exists but value is unsupported type.
+     */
+    public function testGetSizeReturnsNullWhenStatValueIsNonNumericType(): void
+    {
+        $ext = $this->createMock(ExtensionCheckerInterface::class);
+        $ext->method('loaded')->with('ssh2')->willReturn(true);
+
+        $ssh2 = $this->createMock(Ssh2FunctionsInterface::class);
+        $ssh2->method('connect')->willReturn('__conn__');
+        $ssh2->method('sftp')->willReturn(55);
+        $ssh2->method('authPassword')->with('__conn__', 'u', 'p')->willReturn(true);
+
+        // size exists but is an array => statGetInt should fall through to final return null
+        $ssh2->method('sftpStat')->willReturn([
+            'size' => ['nope'],
+            'mode' => 0100000,
+        ]);
+
+        $client = $this->makeClient(ext: $ext, ssh2: $ssh2);
+        $client->connect()->loginWithPassword('u', 'p');
+
+        self::assertNull($client->getSize('/x'));
+    }
+
     public function testChmodThrowsWhenChmodFails(): void
     {
         $ext = $this->createMock(ExtensionCheckerInterface::class);

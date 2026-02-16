@@ -23,9 +23,15 @@ use Cxxi\FtpClient\Infrastructure\Port\Ssh2FunctionsInterface;
 final class NativeSsh2Functions implements Ssh2FunctionsInterface
 {
     /**
-     * @var NativeFunctionInvokerInterface Invoker used for all native calls.
+     * Invoker used for all native calls.
      */
     private readonly NativeFunctionInvokerInterface $invoke;
+
+    /**
+     * Typed wrapper over {@see NativeFunctionInvokerInterface} ensuring
+     * deterministic return types for static analysis and runtime safety.
+     */
+    private readonly TypedNativeInvoker $typed;
 
     /**
      * @param NativeFunctionInvokerInterface|null $invoke
@@ -36,6 +42,7 @@ final class NativeSsh2Functions implements Ssh2FunctionsInterface
     public function __construct(?NativeFunctionInvokerInterface $invoke = null)
     {
         $this->invoke = $invoke ?? new NativeFunctionInvoker();
+        $this->typed = new TypedNativeInvoker($this->invoke);
     }
 
     /**
@@ -45,10 +52,13 @@ final class NativeSsh2Functions implements Ssh2FunctionsInterface
      *
      * @param array<string, mixed> $methods
      * @param array<string, mixed> $callbacks
+     *
+     * @return resource|false
+     * @phpstan-return resource|false
      */
-    public function connect(string $host, int $port, array $methods = [], array $callbacks = []): mixed
+    public function connect(string $host, int $port, array $methods = [], array $callbacks = [])
     {
-        return ($this->invoke)('ssh2_connect', [$host, $port, $methods, $callbacks]);
+        return $this->typed->resourceOrFalse('ssh2_connect', [$host, $port, $methods, $callbacks]);
     }
 
     /**
@@ -58,7 +68,7 @@ final class NativeSsh2Functions implements Ssh2FunctionsInterface
      */
     public function authPassword(mixed $connection, string $user, string $pass): bool
     {
-        return (bool) ($this->invoke)('ssh2_auth_password', [$connection, $user, $pass]);
+        return $this->typed->bool('ssh2_auth_password', [$connection, $user, $pass]);
     }
 
     /**
@@ -68,7 +78,7 @@ final class NativeSsh2Functions implements Ssh2FunctionsInterface
      */
     public function authPubkeyFile(mixed $connection, string $user, string $pubkeyFile, string $privkeyFile): bool
     {
-        return (bool) ($this->invoke)(
+        return $this->typed->bool(
             'ssh2_auth_pubkey_file',
             [$connection, $user, $pubkeyFile, $privkeyFile]
         );
@@ -78,10 +88,13 @@ final class NativeSsh2Functions implements Ssh2FunctionsInterface
      * {@inheritDoc}
      *
      * Delegates to \ssh2_sftp($connection).
+     *
+     * @return resource|false
+     * @phpstan-return resource|false
      */
-    public function sftp(mixed $connection): mixed
+    public function sftp(mixed $connection)
     {
-        return ($this->invoke)('ssh2_sftp', [$connection]);
+        return $this->typed->resourceOrFalse('ssh2_sftp', [$connection]);
     }
 
     /**
@@ -93,9 +106,9 @@ final class NativeSsh2Functions implements Ssh2FunctionsInterface
      */
     public function sftpStat(mixed $sftp, string $path): array|false
     {
-        /** @var array<int|string, mixed>|false $out */
-        $out = ($this->invoke)('ssh2_sftp_stat', [$sftp, $path]);
+        $out = $this->typed->arrayOrFalse('ssh2_sftp_stat', [$sftp, $path]);
 
+        /** @var array<int|string, mixed>|false $out */
         return $out;
     }
 
@@ -106,7 +119,7 @@ final class NativeSsh2Functions implements Ssh2FunctionsInterface
      */
     public function sftpUnlink(mixed $sftp, string $path): bool
     {
-        return (bool) ($this->invoke)('ssh2_sftp_unlink', [$sftp, $path]);
+        return $this->typed->bool('ssh2_sftp_unlink', [$sftp, $path]);
     }
 
     /**
@@ -116,7 +129,7 @@ final class NativeSsh2Functions implements Ssh2FunctionsInterface
      */
     public function sftpMkdir(mixed $sftp, string $directory, int $mode = 0775, bool $recursive = false): bool
     {
-        return (bool) ($this->invoke)('ssh2_sftp_mkdir', [$sftp, $directory, $mode, $recursive]);
+        return $this->typed->bool('ssh2_sftp_mkdir', [$sftp, $directory, $mode, $recursive]);
     }
 
     /**
@@ -126,7 +139,7 @@ final class NativeSsh2Functions implements Ssh2FunctionsInterface
      */
     public function sftpRmdir(mixed $sftp, string $directory): bool
     {
-        return (bool) ($this->invoke)('ssh2_sftp_rmdir', [$sftp, $directory]);
+        return $this->typed->bool('ssh2_sftp_rmdir', [$sftp, $directory]);
     }
 
     /**
@@ -136,7 +149,7 @@ final class NativeSsh2Functions implements Ssh2FunctionsInterface
      */
     public function sftpRename(mixed $sftp, string $from, string $to): bool
     {
-        return (bool) ($this->invoke)('ssh2_sftp_rename', [$sftp, $from, $to]);
+        return $this->typed->bool('ssh2_sftp_rename', [$sftp, $from, $to]);
     }
 
     /**
@@ -146,7 +159,7 @@ final class NativeSsh2Functions implements Ssh2FunctionsInterface
      */
     public function sftpChmod(mixed $sftp, string $path, int $mode): bool
     {
-        return (bool) ($this->invoke)('ssh2_sftp_chmod', [$sftp, $path, $mode]);
+        return $this->typed->bool('ssh2_sftp_chmod', [$sftp, $path, $mode]);
     }
 
     /**
@@ -156,9 +169,6 @@ final class NativeSsh2Functions implements Ssh2FunctionsInterface
      */
     public function fingerprint(mixed $connection, int $flags): string|false
     {
-        /** @var string|false $out */
-        $out = ($this->invoke)('ssh2_fingerprint', [$connection, $flags]);
-
-        return $out;
+        return $this->typed->stringOrFalse('ssh2_fingerprint', [$connection, $flags]);
     }
 }

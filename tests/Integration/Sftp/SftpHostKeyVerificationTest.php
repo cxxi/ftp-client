@@ -7,22 +7,23 @@ namespace Cxxi\FtpClient\Tests\Integration\Sftp;
 use Cxxi\FtpClient\Exception\ConnectionException;
 use Cxxi\FtpClient\FtpClient;
 use Cxxi\FtpClient\Model\ConnectionOptions;
+use Cxxi\FtpClient\Tests\Support\Env;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('sftp')]
 final class SftpHostKeyVerificationTest extends SftpIntegrationTestCase
 {
-    public function test_strict_host_key_checking_accepts_matching_fingerprint(): void
+    public function testStrictHostKeyCheckingAcceptsMatchingFingerprint(): void
     {
         $this->requireSsh2();
 
-        $fingerprint = $_ENV['SFTP_FINGERPRINT'] ?? null;
-        if (!\is_string($fingerprint) || $fingerprint === '') {
-            self::markTestSkipped('SFTP_FINGERPRINT is not set (should be injected by bin/integration).');
+        $fingerprint = Env::stringOrNull('SFTP_FINGERPRINT');
+        if ($fingerprint === null) {
+            self::markTestSkipped('SFTP_FINGERPRINT is not set.');
         }
 
         $options = new ConnectionOptions(
-            hostKeyAlgo: $_ENV['SFTP_HOSTKEY_ALGO'] ?? 'ssh-ed25519',
+            hostKeyAlgo: Env::string('SFTP_HOSTKEY_ALGO', 'ssh-ed25519'),
             expectedFingerprint: $fingerprint,
             strictHostKeyChecking: true,
         );
@@ -38,12 +39,12 @@ final class SftpHostKeyVerificationTest extends SftpIntegrationTestCase
         $client->closeConnection();
     }
 
-    public function test_strict_host_key_checking_rejects_wrong_fingerprint(): void
+    public function testStrictHostKeyCheckingRejectsWrongFingerprint(): void
     {
         $this->requireSsh2();
 
         $options = new ConnectionOptions(
-            hostKeyAlgo: $_ENV['SFTP_HOSTKEY_ALGO'] ?? 'ssh-ed25519',
+            hostKeyAlgo: Env::string('SFTP_HOSTKEY_ALGO', 'ssh-ed25519'),
             expectedFingerprint: 'MD5:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00',
             strictHostKeyChecking: true,
         );

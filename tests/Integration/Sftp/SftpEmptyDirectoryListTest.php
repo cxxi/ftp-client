@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('sftp')]
 final class SftpEmptyDirectoryListTest extends SftpIntegrationTestCase
 {
-    public function test_listFiles_returns_empty_array_on_empty_directory(): void
+    public function testListFilesReturnsEmptyArrayOnEmptyDirectory(): void
     {
         $this->requireSsh2();
 

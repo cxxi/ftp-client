@@ -6,6 +6,7 @@ namespace Cxxi\FtpClient\Tests\Integration\Sftp;
 
 use Cxxi\FtpClient\FtpClient;
 use Cxxi\FtpClient\Model\ConnectionOptions;
+use Cxxi\FtpClient\Tests\Support\Env;
 use PHPUnit\Framework\TestCase;
 
 abstract class SftpIntegrationTestCase extends TestCase
@@ -21,10 +22,10 @@ abstract class SftpIntegrationTestCase extends TestCase
     {
         return \sprintf(
             'sftp://%s:%s@%s:%d/%s',
-            $_ENV['SFTP_USER'],
-            $_ENV['SFTP_PASS'],
-            $_ENV['SFTP_HOST'],
-            (int) $_ENV['SFTP_PORT'],
+            Env::string('SFTP_USER', 'test'),
+            Env::string('SFTP_PASS', 'test'),
+            Env::string('SFTP_HOST', 'sftp'),
+            Env::int('SFTP_PORT', 22),
             ltrim($path, '/')
         );
     }
@@ -40,5 +41,35 @@ abstract class SftpIntegrationTestCase extends TestCase
     protected function uniq(string $prefix): string
     {
         return $prefix . '-' . \bin2hex(\random_bytes(8));
+    }
+
+    protected function requireEnvString(string $key): string
+    {
+        $v = Env::stringOrNull($key);
+        if ($v === null) {
+            self::markTestSkipped(sprintf('%s is not set (should be injected by bin/integration).', $key));
+        }
+
+        return $v;
+    }
+
+    protected function requireEnvInt(string $key): int
+    {
+        $v = Env::int($key, 0);
+        if ($v <= 0) {
+            self::markTestSkipped(sprintf('%s is not set (should be injected by bin/integration).', $key));
+        }
+
+        return $v;
+    }
+
+    protected function requireEnvBool(string $key): bool
+    {
+        $raw = Env::stringOrNull($key);
+        if ($raw === null) {
+            self::markTestSkipped(sprintf('%s is not set (should be injected by bin/integration).', $key));
+        }
+
+        return Env::bool($key, false);
     }
 }

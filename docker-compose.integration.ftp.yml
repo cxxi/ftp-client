@@ -16,6 +16,7 @@ services:
     command: ["/run.sh", "-c", "30", "-C", "10", "-l", "puredb:/etc/pure-ftpd/pureftpd.pdb", "-E", "-j", "-P", "ftp", "-p", "21100:21110"]
 
   php:
+    image: ftp-client-php-ftp
     build:
       context: .
       dockerfile: Dockerfile.integration.ftp

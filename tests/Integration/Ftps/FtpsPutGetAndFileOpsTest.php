@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('ftps')]
 final class FtpsPutGetAndFileOpsTest extends FtpsIntegrationTestCase
 {
-    public function test_put_download_getSize_getMTime_rename_delete(): void
+    public function testPutDownloadGetSizeGetMTimeRenameDelete(): void
     {
         $this->requireFtps();
 

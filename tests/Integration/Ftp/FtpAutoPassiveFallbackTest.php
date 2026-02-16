@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('ftp')]
 final class FtpAutoPassiveFallbackTest extends FtpIntegrationTestCase
 {
-    public function test_passive_auto_can_list_and_transfer(): void
+    public function testPassiveAutoCanListAndTransfer(): void
     {
         $client = $this->client(new ConnectionOptions(passive: PassiveMode::AUTO));
 

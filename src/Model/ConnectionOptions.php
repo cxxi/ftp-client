@@ -26,8 +26,8 @@ final readonly class ConnectionOptions
      * @param PassiveMode $passive Passive mode configuration for FTP/FTPS.
      * @param HostKeyAlgo|string|null $hostKeyAlgo SFTP host key algorithm (enum or raw string).
      * @param string|null $expectedFingerprint Expected SFTP server fingerprint.
-     *                                  Supported with ext-ssh2: MD5 / SHA1 (e.g. "MD5:aa:bb:..." or "SHA1:...").
-     *                                  Note: SHA256 fingerprints (OpenSSH default) are not supported via ext-ssh2.
+     *            Supported with ext-ssh2: MD5 / SHA1 (e.g. "MD5:aa:bb:..." or "SHA1:...").
+     *            Note: SHA256 fingerprints (OpenSSH default) are not supported via ext-ssh2.
      * @param bool $strictHostKeyChecking Whether strict host key checking is enabled (SFTP).
      * @param int $retryMax Maximum number of retry attempts (0 = no retries).
      * @param int $retryDelayMs Initial retry delay in milliseconds.
@@ -68,8 +68,6 @@ final readonly class ConnectionOptions
      *     - unsafe_operations (bool|int|string)
      *
      * @param array<string, mixed> $options
-     *
-     * @return self
      */
     public static function fromArray(array $options): self
     {
@@ -85,6 +83,31 @@ final readonly class ConnectionOptions
             retryJitter: self::parseRetryJitter($options),
             retryUnsafeOperations: self::parseRetryUnsafeOperations($options),
         );
+    }
+
+    /**
+     * Normalize a potentially mixed-key array into an array with string keys.
+     *
+     * PHPStan cannot infer string keys from a runtime \is_array() check alone.
+     * This helper ensures the returned array satisfies `array<string, mixed>`.
+     *
+     * @param mixed $value
+     * @return array<string, mixed>
+     */
+    private static function normalizeStringKeyedArray(mixed $value): array
+    {
+        if (!\is_array($value)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($value as $k => $v) {
+            if (\is_string($k)) {
+                $out[$k] = $v;
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -141,8 +164,7 @@ final readonly class ConnectionOptions
      */
     private static function getSftpArray(array $options): array
     {
-        $raw = $options['sftp'] ?? null;
-        return \is_array($raw) ? $raw : [];
+        return self::normalizeStringKeyedArray($options['sftp'] ?? null);
     }
 
     /**
@@ -237,8 +259,7 @@ final readonly class ConnectionOptions
      */
     private static function getRetryArray(array $options): array
     {
-        $raw = $options['retry'] ?? null;
-        return \is_array($raw) ? $raw : [];
+        return self::normalizeStringKeyedArray($options['retry'] ?? null);
     }
 
     /**

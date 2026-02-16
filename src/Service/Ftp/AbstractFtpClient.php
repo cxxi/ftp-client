@@ -88,7 +88,8 @@ abstract class AbstractFtpClient extends AbstractClient
      *
      * @param int|null $timeout Connection timeout in seconds (null to use ext default).
      *
-     * @return resource|false|null Connection handle (implementation-specific).
+     * @return resource|\FTP\Connection|false Connection handle (implementation-specific).
+     * @phpstan-return resource|\FTP\Connection|false
      */
     abstract protected function doConnectFtp(?int $timeout);
 

@@ -25,8 +25,9 @@ interface Ssh2FunctionsInterface
      * @param array<string, mixed>  $callbacks Optional callbacks for SSH2 negotiation.
      *
      * @return mixed SSH connection handle (resource) or false on failure.
+     * @phpstan-return resource|false
      */
-    public function connect(string $host, int $port, array $methods = [], array $callbacks = []): mixed;
+    public function connect(string $host, int $port, array $methods = [], array $callbacks = []);
 
     /**
      * Authenticate using username and password.
@@ -52,8 +53,9 @@ interface Ssh2FunctionsInterface
      * Initialize the SFTP subsystem.
      *
      * @return mixed SFTP handle (resource) or false on failure.
+     * @phpstan-return resource|false
      */
-    public function sftp(mixed $connection): mixed;
+    public function sftp(mixed $connection);
 
     /**
      * Retrieve stat information for a remote path.

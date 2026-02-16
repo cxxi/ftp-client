@@ -23,6 +23,7 @@ services:
     entrypoint: ["/bin/sh", "-lc", "apk add --no-cache openssl >/dev/null 2>&1 && ftps-certificate"]
 
   php:
+    image: ftp-client-php-ftps
     build:
       context: .
       dockerfile: Dockerfile.integration.ftps

@@ -34,6 +34,19 @@ final class AbstractFtpClientTest extends TestCase
         return new FtpUrl($proto, 'example.com', $port, $user, $pass, $path);
     }
 
+    /**
+     * @return resource
+     */
+    private function dummyResource()
+    {
+        $h = \fopen('php://temp', 'r+');
+        if ($h === false) {
+            self::fail('Unable to create dummy resource for tests.');
+        }
+
+        return $h;
+    }
+
     private function makeClient(
         ?ConnectionOptions $options = null,
         ?ExtensionCheckerInterface $ext = null,
@@ -48,9 +61,26 @@ final class AbstractFtpClientTest extends TestCase
         $fs ??= $this->createMock(FilesystemFunctionsInterface::class);
         $url ??= $this->makeUrl();
 
-        $connectResult ??= \fopen('php://temp', 'r+');
+        $connectResult ??= $this->dummyResource();
 
-        return new class ($url, $options, new NullLogger(), $ext, $ftp, $fs, new WarningCatcher(), $connectResult) extends AbstractFtpClient {
+        if (!\is_resource($connectResult) && $connectResult !== false) {
+            throw new \InvalidArgumentException('connectResult must be a resource or false.');
+        }
+
+        /** @var resource|false $connectResultTyped */
+        $connectResultTyped = $connectResult;
+
+        return new class ($url, $options, new NullLogger(), $ext, $ftp, $fs, new WarningCatcher(), $connectResultTyped) extends AbstractFtpClient {
+            /**
+             * @var resource|false
+             */
+            private $connectResult;
+
+            /**
+             * @param resource|false $connectResult
+             *
+             * @phpstan-param resource|false $connectResult
+             */
             public function __construct(
                 FtpUrl $url,
                 ?ConnectionOptions $options,
@@ -59,8 +89,9 @@ final class AbstractFtpClientTest extends TestCase
                 $ftp,
                 $fs,
                 $warnings,
-                private mixed $connectResult
+                $connectResult
             ) {
+                $this->connectResult = $connectResult;
                 parent::__construct($url, $options, $logger, $extensions, $ftp, $fs, $warnings);
             }
 
@@ -112,7 +143,7 @@ final class AbstractFtpClientTest extends TestCase
         $ext = $this->createMock(ExtensionCheckerInterface::class);
         $ext->method('loaded')->with('ftp')->willReturn(true);
 
-        $client = $this->makeClient(ext: $ext, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, connectResult: $this->dummyResource());
         $client->connect();
 
         self::assertTrue($client->isConnected());
@@ -139,7 +170,7 @@ final class AbstractFtpClientTest extends TestCase
             ext: $ext,
             ftp: $ftp,
             url: $this->makeUrl(user: null, pass: null),
-            connectResult: '__conn__'
+            connectResult: $this->dummyResource()
         );
 
         $client->connect();
@@ -355,7 +386,7 @@ final class AbstractFtpClientTest extends TestCase
         $ftp->method('pwd')->willReturn('/base');
         $ftp->method('nlist')->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -376,7 +407,7 @@ final class AbstractFtpClientTest extends TestCase
         $ftp->method('pwd')->willReturn('/base');
         $ftp->method('rawlist')->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -397,7 +428,7 @@ final class AbstractFtpClientTest extends TestCase
         $ftp->method('pwd')->willReturn('/base');
         $ftp->method('rawlist')->willReturn(['l1', 'l2']);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         self::assertSame(['l1', 'l2'], $client->rawList('.', true));
@@ -415,7 +446,7 @@ final class AbstractFtpClientTest extends TestCase
         $ftp->method('pwd')->willReturn('/base');
         $ftp->method('mlsd')->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -438,7 +469,7 @@ final class AbstractFtpClientTest extends TestCase
             ['name' => 'a.txt', 'type' => 'file'],
         ]);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         self::assertSame([['name' => 'a.txt', 'type' => 'file']], $client->mlsd('.'));
@@ -460,7 +491,7 @@ final class AbstractFtpClientTest extends TestCase
         $fs->method('dirname')->willReturn('/tmp');
         $fs->method('isDir')->willReturn(true);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, fs: $fs, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, fs: $fs, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -485,7 +516,7 @@ final class AbstractFtpClientTest extends TestCase
         $fs->method('dirname')->willReturn('/tmp');
         $fs->method('isDir')->willReturn(true);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, fs: $fs, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, fs: $fs, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $client->downloadFile('r.txt', '/tmp/l.txt');
@@ -508,7 +539,7 @@ final class AbstractFtpClientTest extends TestCase
         $fs->method('fileExists')->willReturn(true);
         $fs->method('isReadable')->willReturn(true);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, fs: $fs, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, fs: $fs, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -533,7 +564,7 @@ final class AbstractFtpClientTest extends TestCase
         $fs->method('fileExists')->willReturn(true);
         $fs->method('isReadable')->willReturn(true);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, fs: $fs, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, fs: $fs, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $client->putFile('dest.txt', '/tmp/source.txt');
@@ -551,7 +582,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->method('pwd')->willReturnOnConsecutiveCalls('/base', false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         self::assertFalse($client->isDirectory('x'));
@@ -570,7 +601,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->method('chdir')->willReturnOnConsecutiveCalls(true, true);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         self::assertTrue($client->isDirectory('dir'));
@@ -588,7 +619,7 @@ final class AbstractFtpClientTest extends TestCase
         $ftp->method('pwd')->willReturnOnConsecutiveCalls('/base', '/base');
         $ftp->method('chdir')->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         self::assertFalse($client->isDirectory('dir'));
@@ -606,7 +637,7 @@ final class AbstractFtpClientTest extends TestCase
         $ftp->method('pwd')->willReturn('/base');
         $ftp->method('delete')->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -626,7 +657,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->method('pwd')->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -671,7 +702,7 @@ final class AbstractFtpClientTest extends TestCase
         $ftp->method('pwd')->willReturn('/else');
         $ftp->method('chdir')->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -692,7 +723,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->expects(self::never())->method('mkdir');
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $client->makeDirectory('');
@@ -715,7 +746,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->expects(self::never())->method('mkdir');
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $client->makeDirectory('a/b', recursive: true);
@@ -755,7 +786,7 @@ final class AbstractFtpClientTest extends TestCase
                 throw new \LogicException('Unexpected mkdir() call count');
             });
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp);
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $client->makeDirectory('a/b', recursive: true);
@@ -790,7 +821,7 @@ final class AbstractFtpClientTest extends TestCase
             ->with(self::callback(static fn ($conn): bool => \is_resource($conn)), 'a')
             ->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp);
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $client->makeDirectory('a', recursive: true);
@@ -812,7 +843,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->method('mkdir')->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -836,7 +867,7 @@ final class AbstractFtpClientTest extends TestCase
             ->with(self::callback(static fn ($conn): bool => \is_resource($conn)), 'a/b')
             ->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp);
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -857,7 +888,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->method('rmdir')->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -879,7 +910,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->method('chdir')->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -903,7 +934,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->method('nlist')->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -1042,10 +1073,10 @@ final class AbstractFtpClientTest extends TestCase
         });
 
         $ftp->method('rmdir')->willReturnCallback(function (mixed $conn, string $dir) {
-            return in_array($dir, ['dir/child', 'dir'], true);
+            return \in_array($dir, ['dir/child', 'dir'], true);
         });
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $client->removeDirectoryRecursive('dir');
@@ -1064,7 +1095,7 @@ final class AbstractFtpClientTest extends TestCase
         $ftp->method('pwd')->willReturn('/base');
 
         $ftp->method('chdir')->willReturnCallback(function (mixed $conn, string $dir) {
-            self::assertSame('__conn__', $conn);
+            self::assertTrue(\is_resource($conn));
 
             return match ($dir) {
                 'dir' => true,
@@ -1075,7 +1106,7 @@ final class AbstractFtpClientTest extends TestCase
         });
 
         $ftp->method('nlist')->willReturnCallback(function (mixed $conn, string $dir) {
-            self::assertSame('__conn__', $conn);
+            self::assertTrue(\is_resource($conn));
 
             if ($dir === 'dir' || $dir === '.') {
                 return ['bad'];
@@ -1085,11 +1116,11 @@ final class AbstractFtpClientTest extends TestCase
         });
 
         $ftp->method('delete')->willReturnCallback(function (mixed $conn, string $path) {
-            self::assertSame('__conn__', $conn);
+            self::assertTrue(\is_resource($conn));
             return false;
         });
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -1110,7 +1141,7 @@ final class AbstractFtpClientTest extends TestCase
         $ftp->method('pwd')->willReturn('/base');
 
         $ftp->method('chdir')->willReturnCallback(function (mixed $conn, string $dir) {
-            self::assertSame('__conn__', $conn);
+            self::assertTrue(\is_resource($conn));
 
             return match ($dir) {
                 'dir' => true,
@@ -1119,7 +1150,7 @@ final class AbstractFtpClientTest extends TestCase
         });
 
         $ftp->method('nlist')->willReturnCallback(function (mixed $conn, string $dir) {
-            self::assertSame('__conn__', $conn);
+            self::assertTrue(\is_resource($conn));
 
             if ($dir === 'dir' || $dir === '.') {
                 return [];
@@ -1128,9 +1159,12 @@ final class AbstractFtpClientTest extends TestCase
             return [];
         });
 
-        $ftp->method('rmdir')->with('__conn__', 'dir')->willReturn(false);
+        $ftp->expects(self::once())
+            ->method('rmdir')
+            ->with(self::callback(static fn ($conn): bool => \is_resource($conn)), 'dir')
+            ->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -1152,7 +1186,7 @@ final class AbstractFtpClientTest extends TestCase
         $ftp->method('size')->willReturn(-1);
         $ftp->method('mdtm')->willReturn(123);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         self::assertNull($client->getSize('x'));
@@ -1171,7 +1205,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->method('mdtm')->willReturn(-1);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         self::assertNull($client->getMTime('x'));
@@ -1189,7 +1223,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->method('chmod')->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -1210,7 +1244,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->method('chmod')->willReturn(0644);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $client->chmod('x', 0644);
@@ -1229,7 +1263,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->method('rename')->willReturn(false);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $this->expectException(TransferException::class);
@@ -1250,7 +1284,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->method('rename')->willReturn(true);
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $client->rename('a', 'b');
@@ -1282,7 +1316,8 @@ final class AbstractFtpClientTest extends TestCase
              */
             protected function doConnectFtp(?int $timeout)
             {
-                return \fopen('php://temp', 'r+');
+                $h = \fopen('php://temp', 'r+');
+                return $h === false ? false : $h;
             }
 
             public function closeConnection(): void
@@ -1306,7 +1341,7 @@ final class AbstractFtpClientTest extends TestCase
 
         $ftp->expects(self::never())->method('mkdir');
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: '__conn__');
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $client->makeDirectory('/', recursive: false);
@@ -1330,7 +1365,7 @@ final class AbstractFtpClientTest extends TestCase
             ->with(self::callback(static fn ($conn): bool => \is_resource($conn)), 'a/b')
             ->willReturn('a/b');
 
-        $client = $this->makeClient(ext: $ext, ftp: $ftp);
+        $client = $this->makeClient(ext: $ext, ftp: $ftp, connectResult: $this->dummyResource());
         $this->connectAndLogin($client);
 
         $client->makeDirectory('a/b', recursive: false);
@@ -1373,7 +1408,8 @@ final class AbstractFtpClientTest extends TestCase
         $client = $this->makeClient(
             options: new ConnectionOptions(passive: PassiveMode::TRUE),
             ext: $ext,
-            ftp: $ftp
+            ftp: $ftp,
+            connectResult: $this->dummyResource()
         );
         $this->connectAndLogin($client);
 

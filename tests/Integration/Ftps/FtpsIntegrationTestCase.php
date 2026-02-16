@@ -6,6 +6,7 @@ namespace Cxxi\FtpClient\Tests\Integration\Ftps;
 
 use Cxxi\FtpClient\FtpClient;
 use Cxxi\FtpClient\Model\ConnectionOptions;
+use Cxxi\FtpClient\Tests\Support\Env;
 use PHPUnit\Framework\TestCase;
 
 abstract class FtpsIntegrationTestCase extends TestCase
@@ -25,10 +26,10 @@ abstract class FtpsIntegrationTestCase extends TestCase
     {
         return \sprintf(
             'ftps://%s:%s@%s:%d/%s',
-            $_ENV['FTPS_USER'],
-            $_ENV['FTPS_PASS'],
-            $_ENV['FTPS_HOST'],
-            (int) $_ENV['FTPS_PORT'],
+            Env::string('FTPS_USER', 'test'),
+            Env::string('FTPS_PASS', 'test'),
+            Env::string('FTPS_HOST', 'ftps'),
+            Env::int('FTPS_PORT', 21),
             ltrim($path, '/')
         );
     }

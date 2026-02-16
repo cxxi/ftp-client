@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('ftps')]
 final class FtpsPathNormalizationTest extends FtpsIntegrationTestCase
 {
-    public function test_put_and_stat_work_with_relative_and_absolute_paths(): void
+    public function testPutAndStatWorkWithRelativeAndAbsolute_paths(): void
     {
         $this->requireFtps();
         $client = $this->client();
@@ -34,7 +34,7 @@ final class FtpsPathNormalizationTest extends FtpsIntegrationTestCase
         @\unlink($local);
     }
 
-    public function test_listFiles_dot_and_absolute_root_are_consistent(): void
+    public function testListFilesDotAndAbsoluteRootAreConsistent(): void
     {
         $this->requireFtps();
         $client = $this->client();

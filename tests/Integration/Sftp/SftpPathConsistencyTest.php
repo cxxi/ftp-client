@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('sftp')]
 final class SftpPathConsistencyTest extends SftpIntegrationTestCase
 {
-    public function test_relative_and_absolute_paths_target_the_same_remote_file(): void
+    public function testRelativeAndAbsolutePathsTargetTheSameRemoteFile(): void
     {
         $this->requireSsh2();
 

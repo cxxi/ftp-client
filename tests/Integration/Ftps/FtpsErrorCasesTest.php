@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('ftps')]
 final class FtpsErrorCasesTest extends FtpsIntegrationTestCase
 {
-    public function test_delete_nonexistent_throws(): void
+    public function testDeleteNonexistentThrows(): void
     {
         $this->requireFtps();
         $client = $this->client();
@@ -21,7 +21,7 @@ final class FtpsErrorCasesTest extends FtpsIntegrationTestCase
         $client->deleteFile($missing);
     }
 
-    public function test_rename_nonexistent_throws(): void
+    public function testRenameNonexistentThrows(): void
     {
         $this->requireFtps();
         $client = $this->client();
@@ -33,7 +33,7 @@ final class FtpsErrorCasesTest extends FtpsIntegrationTestCase
         $client->rename($missing, $to);
     }
 
-    public function test_download_nonexistent_throws(): void
+    public function testDownloadNonexistentThrows(): void
     {
         $this->requireFtps();
         $client = $this->client();
@@ -50,7 +50,7 @@ final class FtpsErrorCasesTest extends FtpsIntegrationTestCase
         }
     }
 
-    public function test_removeDirectory_nonempty_throws(): void
+    public function testRemoveDirectoryNonemptyThrows(): void
     {
         $this->requireFtps();
         $client = $this->client();

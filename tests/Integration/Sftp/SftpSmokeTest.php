@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('sftp')]
 final class SftpSmokeTest extends SftpIntegrationTestCase
 {
-    public function test_connect_and_list(): void
+    public function testConnectAndList(): void
     {
         $this->requireSsh2();
 

@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('ftp')]
 final class FtpMlsdTest extends FtpIntegrationTestCase
 {
-    public function test_rawList_returns_lines(): void
+    public function testRawListReturnsLines(): void
     {
         $this->requireFtpExt();
 
@@ -26,7 +26,7 @@ final class FtpMlsdTest extends FtpIntegrationTestCase
         $client->closeConnection();
     }
 
-    public function test_mlsd_returns_structured_entries_or_is_skipped_if_not_supported(): void
+    public function testMlsdReturnsStructuredEntriesOrIsSkippedIfNotSupported(): void
     {
         $this->requireFtpExt();
 

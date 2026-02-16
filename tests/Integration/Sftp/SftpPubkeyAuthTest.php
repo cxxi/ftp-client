@@ -6,12 +6,13 @@ namespace Cxxi\FtpClient\Tests\Integration\Sftp;
 
 use Cxxi\FtpClient\Contracts\SftpClientTransportInterface;
 use Cxxi\FtpClient\FtpClient;
+use Cxxi\FtpClient\Tests\Support\Env;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('sftp')]
 final class SftpPubkeyAuthTest extends SftpIntegrationTestCase
 {
-    public function test_login_with_pubkey_works(): void
+    public function testLoginWithPubkeyWorks(): void
     {
         $this->requireSsh2();
 
@@ -28,7 +29,7 @@ final class SftpPubkeyAuthTest extends SftpIntegrationTestCase
             $client = $client->connect();
             self::assertInstanceOf(SftpClientTransportInterface::class, $client);
 
-            $client->loginWithPubkey($pub, $priv, user: $_ENV['SFTP_USER']);
+            $client->loginWithPubkey($pub, $priv, user: Env::stringOrNull('SFTP_USER'));
 
             $files = $client->listFiles('.');
             self::assertContainsOnly('string', $files);

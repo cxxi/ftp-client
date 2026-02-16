@@ -50,9 +50,8 @@ final class FtpsClient extends AbstractFtpClient implements FtpClientTransportIn
      *
      * @param int|null $timeout Connection timeout in seconds (null to use ext default).
      *
-     * @return resource|false|null
-     *
-     * @phpstan-return resource|false|null
+     * @return resource|\FTP\Connection|false
+     * @phpstan-return resource|\FTP\Connection|false
      */
     protected function doConnectFtp(?int $timeout)
     {

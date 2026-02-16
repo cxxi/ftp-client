@@ -40,6 +40,19 @@ final class AbstractClientTest extends TestCase
         );
     }
 
+    /**
+     * @return resource
+     */
+    private function dummyResource()
+    {
+        $h = \fopen('php://temp', 'r+');
+        if ($h === false) {
+            self::fail('Unable to create dummy resource for tests.');
+        }
+
+        return $h;
+    }
+
     public function testConstructorSetsFieldsAndDefaultDeps(): void
     {
         $client = $this->makeClient();
@@ -47,7 +60,7 @@ final class AbstractClientTest extends TestCase
         self::assertFalse($client->isConnected());
         self::assertFalse($client->isAuthenticated());
 
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         self::assertTrue($client->isConnected());
 
         $client->setAuthenticated(true);
@@ -68,7 +81,7 @@ final class AbstractClientTest extends TestCase
     public function testAssertReadyForTransferFailsWhenNotAuthenticated(): void
     {
         $client = $this->makeClient();
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
 
         $this->expectException(TransferException::class);
         $this->expectExceptionMessage('session is not authenticated');
@@ -88,7 +101,7 @@ final class AbstractClientTest extends TestCase
             fs: $fs,
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $this->expectException(TransferException::class);
@@ -112,7 +125,7 @@ final class AbstractClientTest extends TestCase
             fs: $fs,
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $out = $client->putFile('/remote.txt', '/local.txt');
@@ -139,7 +152,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $client->failures['doListFiles'] = 1;
@@ -165,7 +178,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $client->failures['doDeleteFile'] = 5;
@@ -193,7 +206,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $client->failures['doDeleteFile'] = 1;
@@ -212,7 +225,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $client->throwNonClientExceptionIn = 'doGetSize';
@@ -231,7 +244,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $client->throwMissingExtensionIn = 'doGetMTime';
@@ -259,7 +272,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $client->failures['doRename'] = 999;
@@ -295,7 +308,7 @@ final class AbstractClientTest extends TestCase
             fs: $fs,
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $out = $client->downloadFile('/remote.txt', '/tmp/x/file.txt');
@@ -321,7 +334,7 @@ final class AbstractClientTest extends TestCase
             fs: $fs,
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $this->expectException(TransferException::class);
@@ -348,7 +361,7 @@ final class AbstractClientTest extends TestCase
             fs: $fs,
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $client->downloadFile('/remote.txt', '/tmp/x/file.txt');
@@ -364,7 +377,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $out = $client->isDirectory('/x');
@@ -384,7 +397,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $out = $client->makeDirectory('/dir', true);
@@ -404,7 +417,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $out = $client->removeDirectory('/dir');
@@ -421,7 +434,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         foreach (['', ' ', '.', '..', '/'] as $bad) {
@@ -445,7 +458,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $out = $client->removeDirectoryRecursive('/safe');
@@ -465,7 +478,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $out = $client->rename('/a', '/b');
@@ -482,7 +495,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $out = $client->getSize('/x');
@@ -499,7 +512,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $out = $client->getMTime('/x');
@@ -519,7 +532,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $out = $client->chmod('/x', 0644);
@@ -545,7 +558,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $client->failures['doListFiles'] = 1;
@@ -567,7 +580,7 @@ final class AbstractClientTest extends TestCase
             fs: $this->createMock(FilesystemFunctionsInterface::class),
             warnings: new WarningCatcher()
         );
-        $client->setConnection('X');
+        $client->setConnection($this->dummyResource());
         $client->setAuthenticated(true);
 
         $client->failures['doListFiles'] = 1;
@@ -608,8 +621,17 @@ final class TestClient extends AbstractClient
     public ?string $throwNonClientExceptionIn = null;
     public ?string $throwMissingExtensionIn = null;
 
+    /**
+     * @param resource|false|null $handle
+     *
+     * @phpstan-param resource|false|null $handle
+     */
     public function setConnection(mixed $handle): void
     {
+        if (!\is_resource($handle) && $handle !== false && $handle !== null) {
+            throw new \InvalidArgumentException('Connection handle must be resource, false or null.');
+        }
+
         $this->connection = $handle;
     }
 
@@ -620,7 +642,13 @@ final class TestClient extends AbstractClient
 
     public function connect(): static
     {
-        $this->connection = \fopen('php://temp', 'r+');
+        $h = \fopen('php://temp', 'r+');
+        if ($h === false) {
+            throw new \RuntimeException('Unable to create dummy connection resource.');
+        }
+
+        $this->connection = $h;
+
         return $this;
     }
 
@@ -632,6 +660,10 @@ final class TestClient extends AbstractClient
 
     public function closeConnection(): void
     {
+        if (\is_resource($this->connection)) {
+            \fclose($this->connection);
+        }
+
         $this->connection = null;
         $this->authenticated = false;
     }

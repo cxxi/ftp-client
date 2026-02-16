@@ -6,21 +6,22 @@ namespace Cxxi\FtpClient\Tests\Integration\Ftps;
 
 use Cxxi\FtpClient\Exception\FtpClientException;
 use Cxxi\FtpClient\FtpClient;
+use Cxxi\FtpClient\Tests\Support\Env;
 use PHPUnit\Framework\Attributes\Group;
 
 #[Group('ftps')]
 final class FtpsTlsRequiredTest extends FtpsIntegrationTestCase
 {
-    public function test_plain_ftp_scheme_fails_against_tls_required_server(): void
+    public function testPlainFtpSchemeFailsAgainstTlsRequiredServer(): void
     {
         $this->requireFtps();
 
         $url = \sprintf(
             'ftp://%s:%s@%s:%d/%s',
-            $_ENV['FTPS_USER'],
-            $_ENV['FTPS_PASS'],
-            $_ENV['FTPS_HOST'],
-            (int) $_ENV['FTPS_PORT'],
+            Env::string('FTP_USER', 'test'),
+            Env::string('FTP_PASS', 'test'),
+            Env::string('FTP_HOST', 'ftp'),
+            Env::int('FTP_PORT', 21),
             'upload'
         );
 

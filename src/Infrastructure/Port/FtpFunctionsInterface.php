@@ -24,15 +24,17 @@ interface FtpFunctionsInterface
      * @param int|null $timeout Connection timeout in seconds.
      *
      * @return mixed FTP connection handle (resource) or false on failure.
+     * @phpstan-return resource|\FTP\Connection|false
      */
-    public function connect(string $host, int $port = 21, ?int $timeout = null): mixed;
+    public function connect(string $host, int $port = 21, ?int $timeout = null);
 
     /**
      * Establish an FTPS (FTP over SSL/TLS) connection.
      *
      * @return mixed FTP connection handle (resource) or false on failure.
+     * @phpstan-return resource|\FTP\Connection|false
      */
-    public function sslConnect(string $host, int $port = 21, ?int $timeout = null): mixed;
+    public function sslConnect(string $host, int $port = 21, ?int $timeout = null);
 
     /**
      * Authenticate using username and password.

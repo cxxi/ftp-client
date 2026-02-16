@@ -27,6 +27,12 @@ final class NativeStreamFunctions implements StreamFunctionsInterface
     private readonly NativeFunctionInvokerInterface $invoke;
 
     /**
+     * Typed wrapper over {@see NativeFunctionInvokerInterface} ensuring
+     * deterministic return types for static analysis and runtime safety.
+     */
+    private readonly TypedNativeInvoker $typed;
+
+    /**
      * @param NativeFunctionInvokerInterface|null $invoke
      *        Invoker used to call native stream/directory functions. If null, a default
      *        {@see NativeFunctionInvoker} is used.
@@ -34,16 +40,20 @@ final class NativeStreamFunctions implements StreamFunctionsInterface
     public function __construct(?NativeFunctionInvokerInterface $invoke = null)
     {
         $this->invoke = $invoke ?? new NativeFunctionInvoker();
+        $this->typed = new TypedNativeInvoker($this->invoke);
     }
 
     /**
      * {@inheritDoc}
      *
      * Delegates to {@see \opendir()}.
+     *
+     * @return resource|false
+     * @phpstan-return resource|false
      */
-    public function opendir(string $path): mixed
+    public function opendir(string $path)
     {
-        return ($this->invoke)('opendir', [$path]);
+        return $this->typed->resourceOrFalse('opendir', [$path]);
     }
 
     /**
@@ -53,10 +63,7 @@ final class NativeStreamFunctions implements StreamFunctionsInterface
      */
     public function readdir(mixed $handle): string|false
     {
-        /** @var string|false $out */
-        $out = ($this->invoke)('readdir', [$handle]);
-
-        return $out;
+        return $this->typed->stringOrFalse('readdir', [$handle]);
     }
 
     /**
@@ -73,10 +80,13 @@ final class NativeStreamFunctions implements StreamFunctionsInterface
      * {@inheritDoc}
      *
      * Delegates to {@see \fopen()}.
+     *
+     * @return resource|false
+     * @phpstan-return resource|false
      */
-    public function fopen(string $path, string $mode): mixed
+    public function fopen(string $path, string $mode)
     {
-        return ($this->invoke)('fopen', [$path, $mode]);
+        return $this->typed->resourceOrFalse('fopen', [$path, $mode]);
     }
 
     /**
@@ -96,7 +106,7 @@ final class NativeStreamFunctions implements StreamFunctionsInterface
      */
     public function streamSetTimeout(mixed $handle, int $seconds): bool
     {
-        return (bool) ($this->invoke)('stream_set_timeout', [$handle, $seconds]);
+        return $this->typed->bool('stream_set_timeout', [$handle, $seconds]);
     }
 
     /**
@@ -108,9 +118,6 @@ final class NativeStreamFunctions implements StreamFunctionsInterface
      */
     public function streamCopyToStream(mixed $from, mixed $to): int|false
     {
-        /** @var int|false $out */
-        $out = ($this->invoke)('stream_copy_to_stream', [$from, $to]);
-
-        return $out;
+        return $this->typed->intOrFalse('stream_copy_to_stream', [$from, $to]);
     }
 }

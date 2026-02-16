@@ -3,7 +3,7 @@ includes:
     - vendor/phpstan/phpstan-strict-rules/rules.neon
 
 parameters:
-    level: 8
+    level: max
 
     paths:
         - src
@@ -12,3 +12,4 @@ parameters:
     tmpDir: var/phpstan
 
     reportUnmatchedIgnoredErrors: true
+    treatPhpDocTypesAsCertain: true

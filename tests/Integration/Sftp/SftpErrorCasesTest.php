@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('sftp')]
 final class SftpErrorCasesTest extends SftpIntegrationTestCase
 {
-    public function test_delete_nonexistent_throws(): void
+    public function testDeleteNonexistentThrows(): void
     {
         $this->requireSsh2();
         $client = $this->client();
@@ -25,7 +25,7 @@ final class SftpErrorCasesTest extends SftpIntegrationTestCase
         }
     }
 
-    public function test_rename_nonexistent_throws(): void
+    public function testRenameNonexistentThrows(): void
     {
         $this->requireSsh2();
         $client = $this->client();

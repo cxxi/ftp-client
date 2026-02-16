@@ -30,6 +30,12 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
     private readonly NativeFunctionInvokerInterface $invoke;
 
     /**
+     * Typed wrapper over {@see NativeFunctionInvokerInterface} ensuring
+     * deterministic return types for static analysis and runtime safety.
+     */
+    private readonly TypedNativeInvoker $typed;
+
+    /**
      * @param NativeFunctionInvokerInterface|null $invoke
      *        Invoker used to call native filesystem functions. If null, a default
      *        {@see NativeFunctionInvoker} is used.
@@ -37,6 +43,7 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
     public function __construct(?NativeFunctionInvokerInterface $invoke = null)
     {
         $this->invoke = $invoke ?? new NativeFunctionInvoker();
+        $this->typed = new TypedNativeInvoker($this->invoke);
     }
 
     /**
@@ -46,7 +53,7 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
      */
     public function fileExists(string $path): bool
     {
-        return (bool) ($this->invoke)('file_exists', [$path]);
+        return $this->typed->bool('file_exists', [$path]);
     }
 
     /**
@@ -56,7 +63,7 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
      */
     public function isFile(string $path): bool
     {
-        return (bool) ($this->invoke)('is_file', [$path]);
+        return $this->typed->bool('is_file', [$path]);
     }
 
     /**
@@ -66,7 +73,7 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
      */
     public function isDir(string $path): bool
     {
-        return (bool) ($this->invoke)('is_dir', [$path]);
+        return $this->typed->bool('is_dir', [$path]);
     }
 
     /**
@@ -76,7 +83,7 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
      */
     public function isLink(string $path): bool
     {
-        return (bool) ($this->invoke)('is_link', [$path]);
+        return $this->typed->bool('is_link', [$path]);
     }
 
     /**
@@ -86,7 +93,7 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
      */
     public function isReadable(string $path): bool
     {
-        return (bool) ($this->invoke)('is_readable', [$path]);
+        return $this->typed->bool('is_readable', [$path]);
     }
 
     /**
@@ -102,7 +109,7 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
      */
     public function mkdir(string $directory, int $permissions = 0775, bool $recursive = true): bool
     {
-        return (bool) ($this->invoke)('mkdir', [$directory, $permissions, $recursive]);
+        return $this->typed->bool('mkdir', [$directory, $permissions, $recursive]);
     }
 
     /**
@@ -112,7 +119,7 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
      */
     public function unlink(string $path): bool
     {
-        return (bool) ($this->invoke)('unlink', [$path]);
+        return $this->typed->bool('unlink', [$path]);
     }
 
     /**
@@ -122,7 +129,7 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
      */
     public function rmdir(string $directory): bool
     {
-        return (bool) ($this->invoke)('rmdir', [$directory]);
+        return $this->typed->bool('rmdir', [$directory]);
     }
 
     /**
@@ -132,7 +139,7 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
      */
     public function dirname(string $path): string
     {
-        return (string) ($this->invoke)('dirname', [$path]);
+        return $this->typed->string('dirname', [$path]);
     }
 
     /**
@@ -142,7 +149,7 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
      */
     public function basename(string $path): string
     {
-        return (string) ($this->invoke)('basename', [$path]);
+        return $this->typed->string('basename', [$path]);
     }
 
     /**
@@ -158,15 +165,15 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
      */
     public function joinPath(string ...$parts): string
     {
-        $parts = \array_values(\array_filter($parts, static fn ($p) => $p !== ''));
+        $parts = \array_values(\array_filter($parts, static fn (string $p): bool => $p !== ''));
 
         if ($parts === []) {
             return '';
         }
 
-        $path = \array_shift($parts);
+        $path = $parts[0];
 
-        foreach ($parts as $p) {
+        foreach (\array_slice($parts, 1) as $p) {
             $path = \rtrim($path, \DIRECTORY_SEPARATOR)
                 . \DIRECTORY_SEPARATOR
                 . \ltrim($p, \DIRECTORY_SEPARATOR);
@@ -182,6 +189,6 @@ final class NativeFilesystemFunctions implements FilesystemFunctionsInterface
      */
     public function sysGetTempDir(): string
     {
-        return (string) ($this->invoke)('sys_get_temp_dir', []);
+        return $this->typed->string('sys_get_temp_dir');
     }
 }

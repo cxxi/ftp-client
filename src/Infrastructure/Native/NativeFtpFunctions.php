@@ -26,9 +26,15 @@ use Cxxi\FtpClient\Infrastructure\Port\NativeFunctionInvokerInterface;
 final class NativeFtpFunctions implements FtpFunctionsInterface
 {
     /**
-     * @var NativeFunctionInvokerInterface Invoker used for all native calls.
+     * Invoker used for all native calls.
      */
     private readonly NativeFunctionInvokerInterface $invoke;
+
+    /**
+     * Typed wrapper over {@see NativeFunctionInvokerInterface} ensuring
+     * deterministic return types for static analysis and runtime safety.
+     */
+    private readonly TypedNativeInvoker $typed;
 
     /**
      * @param NativeFunctionInvokerInterface|null $invoke
@@ -39,6 +45,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
     public function __construct(?NativeFunctionInvokerInterface $invoke = null)
     {
         $this->invoke = $invoke ?? new NativeFunctionInvoker();
+        $this->typed = new TypedNativeInvoker($this->invoke);
     }
 
     /**
@@ -47,12 +54,15 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      * Delegates to:
      * - \ftp_connect($host, $port) when $timeout is null
      * - \ftp_connect($host, $port, $timeout) otherwise
+     *
+     * @return mixed
+     * @phpstan-return resource|\FTP\Connection|false
      */
-    public function connect(string $host, int $port = 21, ?int $timeout = null): mixed
+    public function connect(string $host, int $port = 21, ?int $timeout = null)
     {
         return $timeout === null
-            ? ($this->invoke)('ftp_connect', [$host, $port])
-            : ($this->invoke)('ftp_connect', [$host, $port, $timeout]);
+            ? $this->typed->ftpConnectionOrFalse('ftp_connect', [$host, $port])
+            : $this->typed->ftpConnectionOrFalse('ftp_connect', [$host, $port, $timeout]);
     }
 
     /**
@@ -61,12 +71,15 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      * Delegates to:
      * - \ftp_ssl_connect($host, $port) when $timeout is null
      * - \ftp_ssl_connect($host, $port, $timeout) otherwise
+     *
+     * @return mixed
+     * @phpstan-return resource|\FTP\Connection|false
      */
-    public function sslConnect(string $host, int $port = 21, ?int $timeout = null): mixed
+    public function sslConnect(string $host, int $port = 21, ?int $timeout = null)
     {
         return $timeout === null
-            ? ($this->invoke)('ftp_ssl_connect', [$host, $port])
-            : ($this->invoke)('ftp_ssl_connect', [$host, $port, $timeout]);
+            ? $this->typed->ftpConnectionOrFalse('ftp_ssl_connect', [$host, $port])
+            : $this->typed->ftpConnectionOrFalse('ftp_ssl_connect', [$host, $port, $timeout]);
     }
 
     /**
@@ -76,7 +89,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function login(mixed $connection, string $user, string $pass): bool
     {
-        return (bool) ($this->invoke)('ftp_login', [$connection, $user, $pass]);
+        return $this->typed->bool('ftp_login', [$connection, $user, $pass]);
     }
 
     /**
@@ -86,7 +99,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function close(mixed $connection): bool
     {
-        return (bool) ($this->invoke)('ftp_close', [$connection]);
+        return $this->typed->bool('ftp_close', [$connection]);
     }
 
     /**
@@ -98,9 +111,9 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function nlist(mixed $connection, string $dir): array|false
     {
-        /** @var array<int, string>|false $out */
-        $out = ($this->invoke)('ftp_nlist', [$connection, $dir]);
+        $out = $this->typed->arrayOrFalse('ftp_nlist', [$connection, $dir]);
 
+        /** @var array<int, string>|false $out */
         return $out;
     }
 
@@ -115,7 +128,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
     {
         $mode = $mode === \FTP_ASCII ? \FTP_ASCII : \FTP_BINARY;
 
-        return (bool) ($this->invoke)('ftp_get', [$connection, $localFilePath, $remoteFilename, $mode]);
+        return $this->typed->bool('ftp_get', [$connection, $localFilePath, $remoteFilename, $mode]);
     }
 
     /**
@@ -129,7 +142,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
     {
         $mode = $mode === \FTP_ASCII ? \FTP_ASCII : \FTP_BINARY;
 
-        return (bool) ($this->invoke)('ftp_put', [$connection, $remoteFilename, $localFilePath, $mode]);
+        return $this->typed->bool('ftp_put', [$connection, $remoteFilename, $localFilePath, $mode]);
     }
 
     /**
@@ -139,10 +152,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function pwd(mixed $connection): string|false
     {
-        /** @var string|false $out */
-        $out = ($this->invoke)('ftp_pwd', [$connection]);
-
-        return $out;
+        return $this->typed->stringOrFalse('ftp_pwd', [$connection]);
     }
 
     /**
@@ -152,7 +162,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function chdir(mixed $connection, string $directory): bool
     {
-        return (bool) ($this->invoke)('ftp_chdir', [$connection, $directory]);
+        return $this->typed->bool('ftp_chdir', [$connection, $directory]);
     }
 
     /**
@@ -162,7 +172,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function pasv(mixed $connection, bool $enabled): bool
     {
-        return (bool) ($this->invoke)('ftp_pasv', [$connection, $enabled]);
+        return $this->typed->bool('ftp_pasv', [$connection, $enabled]);
     }
 
     /**
@@ -172,7 +182,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function delete(mixed $connection, string $path): bool
     {
-        return (bool) ($this->invoke)('ftp_delete', [$connection, $path]);
+        return $this->typed->bool('ftp_delete', [$connection, $path]);
     }
 
     /**
@@ -182,10 +192,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function mkdir(mixed $connection, string $directory): string|false
     {
-        /** @var string|false $out */
-        $out = ($this->invoke)('ftp_mkdir', [$connection, $directory]);
-
-        return $out;
+        return $this->typed->stringOrFalse('ftp_mkdir', [$connection, $directory]);
     }
 
     /**
@@ -195,7 +202,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function rmdir(mixed $connection, string $directory): bool
     {
-        return (bool) ($this->invoke)('ftp_rmdir', [$connection, $directory]);
+        return $this->typed->bool('ftp_rmdir', [$connection, $directory]);
     }
 
     /**
@@ -205,7 +212,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function rename(mixed $connection, string $from, string $to): bool
     {
-        return (bool) ($this->invoke)('ftp_rename', [$connection, $from, $to]);
+        return $this->typed->bool('ftp_rename', [$connection, $from, $to]);
     }
 
     /**
@@ -215,7 +222,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function size(mixed $connection, string $path): int
     {
-        return (int) ($this->invoke)('ftp_size', [$connection, $path]);
+        return $this->typed->int('ftp_size', [$connection, $path]);
     }
 
     /**
@@ -225,7 +232,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function mdtm(mixed $connection, string $path): int
     {
-        return (int) ($this->invoke)('ftp_mdtm', [$connection, $path]);
+        return $this->typed->int('ftp_mdtm', [$connection, $path]);
     }
 
     /**
@@ -235,10 +242,7 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function chmod(mixed $connection, int $mode, string $path): int|false
     {
-        /** @var int|false $out */
-        $out = ($this->invoke)('ftp_chmod', [$connection, $mode, $path]);
-
-        return $out;
+        return $this->typed->intOrFalse('ftp_chmod', [$connection, $mode, $path]);
     }
 
     /**
@@ -250,9 +254,9 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
      */
     public function rawlist(mixed $connection, string $directory, bool $recursive = false): array|false
     {
-        /** @var array<int, string>|false $out */
-        $out = ($this->invoke)('ftp_rawlist', [$connection, $directory, $recursive]);
+        $out = $this->typed->arrayOrFalse('ftp_rawlist', [$connection, $directory, $recursive]);
 
+        /** @var array<int, string>|false $out */
         return $out;
     }
 
@@ -271,9 +275,9 @@ final class NativeFtpFunctions implements FtpFunctionsInterface
             return false;
         }
 
-        /** @var array<int, mixed>|false $out */
-        $out = ($this->invoke)('ftp_mlsd', [$connection, $directory]);
+        $out = $this->typed->arrayOrFalse('ftp_mlsd', [$connection, $directory]);
 
+        /** @var array<int, mixed>|false $out */
         return $out;
     }
 

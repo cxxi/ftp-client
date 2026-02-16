@@ -26,6 +26,12 @@ final class NativeExtensionChecker implements ExtensionCheckerInterface
     private readonly NativeFunctionInvokerInterface $invoke;
 
     /**
+     * Typed wrapper over {@see NativeFunctionInvokerInterface} ensuring
+     * deterministic return types for static analysis and runtime safety.
+     */
+    private readonly TypedNativeInvoker $typed;
+
+    /**
      * @param NativeFunctionInvokerInterface|null $invoke
      *        Invoker used to call native functions. If null, a default
      *        {@see NativeFunctionInvoker} is used.
@@ -33,6 +39,7 @@ final class NativeExtensionChecker implements ExtensionCheckerInterface
     public function __construct(?NativeFunctionInvokerInterface $invoke = null)
     {
         $this->invoke = $invoke ?? new NativeFunctionInvoker();
+        $this->typed = new TypedNativeInvoker($this->invoke);
     }
 
     /**
@@ -44,6 +51,6 @@ final class NativeExtensionChecker implements ExtensionCheckerInterface
      */
     public function loaded(string $extension): bool
     {
-        return (bool) ($this->invoke)('extension_loaded', [$extension]);
+        return $this->typed->bool('extension_loaded', [$extension]);
     }
 }

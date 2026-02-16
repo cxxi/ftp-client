@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('sftp')]
 final class SftpPutGetTest extends SftpIntegrationTestCase
 {
-    public function test_put_then_download_has_same_content(): void
+    public function testPutThenDownloadHasSameContent(): void
     {
         $this->requireSsh2();
 

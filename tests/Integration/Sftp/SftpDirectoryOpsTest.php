@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('sftp')]
 final class SftpDirectoryOpsTest extends SftpIntegrationTestCase
 {
-    public function test_make_isDirectory_removeDirectory(): void
+    public function testMakeIsDirectoryRemoveDirectory(): void
     {
         $this->requireSsh2();
         $client = $this->client();
@@ -34,7 +34,7 @@ final class SftpDirectoryOpsTest extends SftpIntegrationTestCase
         }
     }
 
-    public function test_removeDirectoryRecursive_deletes_tree(): void
+    public function testRemoveDirectoryRecursiveDeletesTree(): void
     {
         $this->requireSsh2();
         $client = $this->client();
@@ -72,7 +72,7 @@ final class SftpDirectoryOpsTest extends SftpIntegrationTestCase
         }
     }
 
-    public function test_removeDirectory_fails_when_not_empty(): void
+    public function testRemoveDirectoryFailsWhenNotEmpty(): void
     {
         $this->requireSsh2();
         $client = $this->client();

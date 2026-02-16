@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('ftps')]
 final class FtpsPassiveModeTest extends FtpsIntegrationTestCase
 {
-    public function test_passive_true_allows_data_operations(): void
+    public function testPassiveTrueAllowsDataOperations(): void
     {
         $client = $this->client(new ConnectionOptions(passive: PassiveMode::TRUE));
 

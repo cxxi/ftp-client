@@ -15,10 +15,16 @@ final class NativeFtpFunctionsTest extends TestCase
 {
     public function testNativeAdapterDelegatesToInvoker(): void
     {
+        $ftpConn = \fopen('php://temp', 'r+');
+        self::assertIsResource($ftpConn);
+
+        $ftpsConn = \fopen('php://temp', 'r+');
+        self::assertIsResource($ftpsConn);
+
         $invoker = new RecordingInvoker(
             returnsByFunction: [
-                'ftp_connect' => '__ftp_conn__',
-                'ftp_ssl_connect' => '__ftps_conn__',
+                'ftp_connect' => $ftpConn,
+                'ftp_ssl_connect' => $ftpsConn,
                 'ftp_login' => true,
                 'ftp_close' => true,
                 'ftp_nlist' => new ReturnValue(['a.txt', 'b.txt']),
@@ -44,38 +50,38 @@ final class NativeFtpFunctionsTest extends TestCase
 
         $ftp = new NativeFtpFunctions($invoker);
 
-        self::assertSame('__ftp_conn__', $ftp->connect('h', 21, null));
-        self::assertSame('__ftp_conn__', $ftp->connect('h', 21, 10));
+        self::assertSame($ftpConn, $ftp->connect('h', 21, null));
+        self::assertSame($ftpConn, $ftp->connect('h', 21, 10));
 
-        self::assertSame('__ftps_conn__', $ftp->sslConnect('h', 21, null));
-        self::assertSame('__ftps_conn__', $ftp->sslConnect('h', 21, 10));
+        self::assertSame($ftpsConn, $ftp->sslConnect('h', 21, null));
+        self::assertSame($ftpsConn, $ftp->sslConnect('h', 21, 10));
 
-        self::assertTrue($ftp->login('__ftp_conn__', 'u', 'p'));
-        self::assertTrue($ftp->close('__ftp_conn__'));
+        self::assertTrue($ftp->login($ftpConn, 'u', 'p'));
+        self::assertTrue($ftp->close($ftpConn));
 
-        self::assertSame(['a.txt', 'b.txt'], $ftp->nlist('__ftp_conn__', '/'));
+        self::assertSame(['a.txt', 'b.txt'], $ftp->nlist($ftpConn, '/'));
 
-        self::assertTrue($ftp->get('__ftp_conn__', '/local', '/remote', FTP_ASCII));
-        self::assertTrue($ftp->get('__ftp_conn__', '/local', '/remote', 999));
+        self::assertTrue($ftp->get($ftpConn, '/local', '/remote', FTP_ASCII));
+        self::assertTrue($ftp->get($ftpConn, '/local', '/remote', 999));
 
-        self::assertTrue($ftp->put('__ftp_conn__', '/remote', '/local', FTP_ASCII));
-        self::assertTrue($ftp->put('__ftp_conn__', '/remote', '/local', 999));
+        self::assertTrue($ftp->put($ftpConn, '/remote', '/local', FTP_ASCII));
+        self::assertTrue($ftp->put($ftpConn, '/remote', '/local', 999));
 
-        self::assertSame('/', $ftp->pwd('__ftp_conn__'));
-        self::assertTrue($ftp->chdir('__ftp_conn__', '/x'));
-        self::assertTrue($ftp->pasv('__ftp_conn__', true));
-        self::assertTrue($ftp->delete('__ftp_conn__', '/x'));
+        self::assertSame('/', $ftp->pwd($ftpConn));
+        self::assertTrue($ftp->chdir($ftpConn, '/x'));
+        self::assertTrue($ftp->pasv($ftpConn, true));
+        self::assertTrue($ftp->delete($ftpConn, '/x'));
 
-        self::assertSame('/newdir', $ftp->mkdir('__ftp_conn__', '/newdir'));
-        self::assertTrue($ftp->rmdir('__ftp_conn__', '/newdir'));
-        self::assertTrue($ftp->rename('__ftp_conn__', '/a', '/b'));
+        self::assertSame('/newdir', $ftp->mkdir($ftpConn, '/newdir'));
+        self::assertTrue($ftp->rmdir($ftpConn, '/newdir'));
+        self::assertTrue($ftp->rename($ftpConn, '/a', '/b'));
 
-        self::assertSame(123, $ftp->size('__ftp_conn__', '/f'));
-        self::assertSame(456, $ftp->mdtm('__ftp_conn__', '/f'));
-        self::assertSame(0644, $ftp->chmod('__ftp_conn__', 0644, '/f'));
+        self::assertSame(123, $ftp->size($ftpConn, '/f'));
+        self::assertSame(456, $ftp->mdtm($ftpConn, '/f'));
+        self::assertSame(0644, $ftp->chmod($ftpConn, 0644, '/f'));
 
-        self::assertIsArray($ftp->rawlist('__ftp_conn__', '/', false));
-        self::assertIsArray($ftp->mlsd('__ftp_conn__', '/'));
+        self::assertIsArray($ftp->rawlist($ftpConn, '/', false));
+        self::assertIsArray($ftp->mlsd($ftpConn, '/'));
 
         self::assertNotEmpty($invoker->calls);
     }

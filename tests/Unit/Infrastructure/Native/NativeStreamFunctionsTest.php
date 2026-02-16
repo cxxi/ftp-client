@@ -14,9 +14,14 @@ final class NativeStreamFunctionsTest extends TestCase
 {
     public function testStreamAdapterDelegatesToInvokerWithSequentialReturns(): void
     {
-        $dirHandle = new \stdClass();
-        $fromHandle = new \stdClass();
-        $toHandle = new \stdClass();
+        $dirHandle = \fopen('php://temp', 'r+');
+        self::assertIsResource($dirHandle);
+
+        $fromHandle = \fopen('php://temp', 'r+');
+        self::assertIsResource($fromHandle);
+
+        $toHandle = \fopen('php://temp', 'r+');
+        self::assertIsResource($toHandle);
 
         $invoker = new RecordingInvoker(
             returnsByFunction: [

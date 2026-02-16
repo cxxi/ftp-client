@@ -367,7 +367,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $this->assertSsh2Extension();
 
         $sftp = $this->warnings->run(fn () => $this->ssh2->sftp($this->connection));
-        if ($sftp === false || $sftp === null) {
+        if ($sftp === false) {
             throw new ConnectionException('Failed to initialize SFTP subsystem.');
         }
 
@@ -417,7 +417,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $this->assertSsh2Extension();
 
         $sftp = $this->warnings->run(fn () => $this->ssh2->sftp($this->connection));
-        if ($sftp === false || $sftp === null) {
+        if ($sftp === false) {
             throw new ConnectionException('Failed to initialize SFTP subsystem.');
         }
 
@@ -468,7 +468,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $this->assertSsh2Extension();
 
         $sftp = $this->warnings->run(fn () => $this->ssh2->sftp($this->connection));
-        if ($sftp === false || $sftp === null) {
+        if ($sftp === false) {
             throw new ConnectionException('Failed to initialize SFTP subsystem.');
         }
 
@@ -524,7 +524,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $this->assertSsh2Extension();
 
         $sftp = $this->warnings->run(fn () => $this->ssh2->sftp($this->connection));
-        if ($sftp === false || $sftp === null) {
+        if ($sftp === false) {
             throw new ConnectionException('Failed to initialize SFTP subsystem.');
         }
 
@@ -536,11 +536,16 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             safe: true
         );
 
-        if (!is_array($stat) || !isset($stat['mode'])) {
+        if (!\is_array($stat)) {
             return false;
         }
 
-        return (($stat['mode'] & 0170000) === 0040000);
+        $mode = $this->statGetInt($stat, 'mode');
+        if ($mode === null) {
+            return false;
+        }
+
+        return (($mode & 0170000) === 0040000);
     }
 
     /**
@@ -619,8 +624,11 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
                 safe: true
             );
 
-            if (is_array($stat) && isset($stat['mode']) && $this->statModeIsDir((int) $stat['mode'])) {
-                continue;
+            if (\is_array($stat)) {
+                $mode = $this->statGetInt($stat, 'mode');
+                if ($mode !== null && $this->statModeIsDir($mode)) {
+                    continue;
+                }
             }
 
             $ok = $this->warnings->run(fn () => $this->ssh2->sftpMkdir($sftp, $current, 0775, false));
@@ -633,9 +641,11 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
                     safe: true
                 );
 
-                $existsAsDir = is_array($statAfter)
-                    && isset($statAfter['mode'])
-                    && $this->statModeIsDir((int) $statAfter['mode']);
+                $existsAsDir = false;
+                if (\is_array($statAfter)) {
+                    $modeAfter = $this->statGetInt($statAfter, 'mode');
+                    $existsAsDir = $modeAfter !== null && $this->statModeIsDir($modeAfter);
+                }
 
                 if (!$existsAsDir) {
                     throw new TransferException(sprintf(
@@ -756,11 +766,12 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             safe: true
         );
 
-        if (!is_array($stat) || !isset($stat['size'])) {
+        if (!\is_array($stat)) {
             return null;
         }
 
-        return (int) $stat['size'];
+        $size = $this->statGetInt($stat, 'size');
+        return $size;
     }
 
     /**
@@ -781,11 +792,12 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             safe: true
         );
 
-        if (!is_array($stat) || !isset($stat['mtime'])) {
+        if (!\is_array($stat)) {
             return null;
         }
 
-        return (int) $stat['mtime'];
+        $mtime = $this->statGetInt($stat, 'mtime');
+        return $mtime;
     }
 
     /**
@@ -816,6 +828,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
      * Initialize (or re-use) the SFTP subsystem for the current SSH connection.
      *
      * @return mixed The SFTP subsystem handle returned by ext-ssh2.
+     * @phpstan-return resource
      *
      * @throws ConnectionException If the SFTP subsystem cannot be initialized.
      */
@@ -827,7 +840,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             safe: true
         );
 
-        if ($sftp === false || $sftp === null) {
+        if ($sftp === false) {
             throw new ConnectionException(sprintf(
                 'Failed to initialize SFTP subsystem.%s',
                 $this->warnings->formatLastWarning()
@@ -1093,6 +1106,40 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         }
 
         return str_starts_with($p, '/') ? $p : Path::joinRemote($this->path, $p);
+    }
+
+    /**
+     * Extract an integer value from an ssh2_sftp_stat() array.
+     *
+     * ext-ssh2 usually returns ints, but PHPStan sees mixed; and some fakes/tests
+     * may provide numeric strings.
+     *
+     * @param array<int|string, mixed> $stat
+     */
+    private function statGetInt(array $stat, string $key): ?int
+    {
+        if (!\array_key_exists($key, $stat)) {
+            return null;
+        }
+
+        $v = $stat[$key];
+
+        if (\is_int($v)) {
+            return $v;
+        }
+
+        if (\is_float($v)) {
+            return (int) $v;
+        }
+
+        if (\is_string($v)) {
+            $vv = \trim($v);
+            if ($vv !== '' && \ctype_digit($vv)) {
+                return (int) $vv;
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('ftp')]
 final class FtpSmokeTest extends FtpIntegrationTestCase
 {
-    public function test_connect_login_and_list(): void
+    public function testConnectLoginAndList(): void
     {
         $this->requireFtpExt();
 

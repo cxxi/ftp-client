@@ -4,7 +4,7 @@
 [![CI](https://github.com/cxxi/ftp-client/actions/workflows/ci.yml/badge.svg)](https://github.com/cxxi/ftp-client/actions)
 [![Tests](https://img.shields.io/badge/tests-unit%20%2B%20integration-brightgreen.svg)](https://github.com/cxxi/ftp-client/actions)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/cxxi/ftp-client)
-[![PHPStan Level](https://img.shields.io/badge/phpstan-level%208-brightgreen.svg)](https://phpstan.org/)
+[![PHPStan Level](https://img.shields.io/badge/phpstan-level%20max%20\(9\)%20%2B%20strict%20rules-brightgreen.svg)](https://phpstan.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Packagist](https://img.shields.io/packagist/v/cxxi/ftp-client.svg)](https://packagist.org/packages/cxxi/ftp-client)
 [![Downloads](https://img.shields.io/packagist/dt/cxxi/ftp-client.svg)](https://packagist.org/packages/cxxi/ftp-client)
@@ -108,7 +108,7 @@ No silent trust of unknown hosts.
 * Ports & adapters
 * Fully mockable infrastructure layer
 * Decoupled from PHP global functions
-* Designed for static analysis (PHPStan level 8 clean)
+* Designed for strict static analysis (PHPStan level max (9) + strict rules + bleeding edge)
 
 ---
 
@@ -499,7 +499,9 @@ This library is designed for reliability in production environments.
 * Strict PHPUnit 11 configuration
 * Full mocking of native adapters
 * Error handling and retry semantics fully tested
-* PHPStan level 8 clean (source + tests)
+* PHPStan level max (9) clean (source + tests)
+* phpstan-strict-rules enabled
+* bleedingEdge rules enabled
 
 Run unit tests:
 
@@ -551,11 +553,18 @@ composer test:all
 
 ### Static Analysis
 
-PHPStan level 8 enforced:
+PHPStan level max (9) with strict rules and bleeding edge enabled:
 
 ```bash
 composer phpstan
 ```
+
+Configuration includes:
+
+* level: max (9)
+* phpstan-strict-rules
+* bleedingEdge.neon
+* treatPhpDocTypesAsCertain: true
 
 ---
 
@@ -576,7 +585,7 @@ All checks are enforced in CI:
 * FTP integration tests
 * FTPS (TLS) integration tests
 * SFTP integration tests
-* PHPStan level 8
+* PHPStan level max (9) + strict rules
 * Coding standards
 
 Every protocol feature documented in this README is covered by automated tests.
@@ -616,7 +625,7 @@ Before submitting a pull request:
 
 1. Ensure all unit tests pass.
 2. Ensure all integration tests pass.
-3. Run PHPStan (level 8 must remain clean).
+3. Run PHPStan (level max (9) must remain clean).
 4. Follow existing coding standards.
 
 Useful commands:

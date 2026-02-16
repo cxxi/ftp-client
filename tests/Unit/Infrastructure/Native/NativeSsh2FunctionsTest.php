@@ -14,12 +14,18 @@ final class NativeSsh2FunctionsTest extends TestCase
 {
     public function testNativeAdapterDelegatesToInvoker(): void
     {
+        $conn = \fopen('php://temp', 'r+');
+        self::assertIsResource($conn);
+
+        $sftp = \fopen('php://temp', 'r+');
+        self::assertIsResource($sftp);
+
         $invoker = new RecordingInvoker(
             returnsByFunction: [
-                'ssh2_connect' => '__conn__',
+                'ssh2_connect' => $conn,
                 'ssh2_auth_password' => true,
                 'ssh2_auth_pubkey_file' => false,
-                'ssh2_sftp' => 123,
+                'ssh2_sftp' => $sftp,
                 'ssh2_sftp_stat' => ['size' => 1],
                 'ssh2_sftp_unlink' => true,
                 'ssh2_sftp_mkdir' => true,
@@ -32,22 +38,22 @@ final class NativeSsh2FunctionsTest extends TestCase
 
         $ssh2 = new NativeSsh2Functions($invoker);
 
-        $conn = $ssh2->connect('h', 22, ['hostkey' => 'ssh-rsa'], []);
-        self::assertSame('__conn__', $conn);
+        $outConn = $ssh2->connect('h', 22, ['hostkey' => 'ssh-rsa'], []);
+        self::assertSame($conn, $outConn);
 
-        self::assertTrue($ssh2->authPassword($conn, 'u', 'p'));
-        self::assertFalse($ssh2->authPubkeyFile($conn, 'u', '/pub', '/priv'));
+        self::assertTrue($ssh2->authPassword($outConn, 'u', 'p'));
+        self::assertFalse($ssh2->authPubkeyFile($outConn, 'u', '/pub', '/priv'));
 
-        $sftp = $ssh2->sftp($conn);
-        self::assertSame(123, $sftp);
+        $outSftp = $ssh2->sftp($outConn);
+        self::assertSame($sftp, $outSftp);
 
-        self::assertIsArray($ssh2->sftpStat($sftp, '/x'));
-        self::assertTrue($ssh2->sftpUnlink($sftp, '/x'));
-        self::assertTrue($ssh2->sftpMkdir($sftp, '/d', 0775, false));
-        self::assertFalse($ssh2->sftpRmdir($sftp, '/d'));
-        self::assertTrue($ssh2->sftpRename($sftp, '/a', '/b'));
-        self::assertTrue($ssh2->sftpChmod($sftp, '/x', 0644));
-        self::assertSame('FP', $ssh2->fingerprint($conn, 2));
+        self::assertIsArray($ssh2->sftpStat($outSftp, '/x'));
+        self::assertTrue($ssh2->sftpUnlink($outSftp, '/x'));
+        self::assertTrue($ssh2->sftpMkdir($outSftp, '/d', 0775, false));
+        self::assertFalse($ssh2->sftpRmdir($outSftp, '/d'));
+        self::assertTrue($ssh2->sftpRename($outSftp, '/a', '/b'));
+        self::assertTrue($ssh2->sftpChmod($outSftp, '/x', 0644));
+        self::assertSame('FP', $ssh2->fingerprint($outConn, 2));
 
         self::assertNotEmpty($invoker->calls);
     }

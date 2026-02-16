@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('sftp')]
 final class SftpPathNormalizationTest extends SftpIntegrationTestCase
 {
-    public function test_put_and_stat_work_with_relative_and_absolute_paths(): void
+    public function testPutAndStatWorkWithRelativeAndAbsolutePaths(): void
     {
         $this->requireSsh2();
         $client = $this->client();
@@ -48,7 +48,7 @@ final class SftpPathNormalizationTest extends SftpIntegrationTestCase
         }
     }
 
-    public function test_listFiles_dot_and_absolute_upload_are_consistent(): void
+    public function testListFilesDotAndAbsoluteUploadAreConsistent(): void
     {
         $this->requireSsh2();
         $client = $this->client();

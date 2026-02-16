@@ -33,11 +33,15 @@ use Psr\Log\NullLogger;
 abstract class AbstractClient implements ClientTransportInterface
 {
     /**
-     * Underlying transport connection handle.
+     * Native connection handle.
      *
-     * Typically a native resource returned by the underlying extension.
+     * - PHP < 8.1: resource|false
+     * - PHP >= 8.1: FTP\Connection|false (ext-ftp)
      *
-     * @var resource|false|null
+     * Some transports may keep using resources, others may expose internal objects.
+     *
+     * @var resource|\FTP\Connection|false|null
+     * @phpstan-var resource|\FTP\Connection|false|null
      */
     protected $connection = null;
 

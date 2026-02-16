@@ -23,9 +23,10 @@ interface StreamFunctionsInterface
      *
      * @param string $path Directory path or stream URI.
      *
-     * @return mixed Directory handle or false on failure.
+     * @return mixed Directory handle (resource) or false on failure.
+     * @phpstan-return resource|false
      */
-    public function opendir(string $path): mixed;
+    public function opendir(string $path);
 
     /**
      * Read an entry from a directory handle.
@@ -49,9 +50,10 @@ interface StreamFunctionsInterface
      * @param string $path File path or stream URI.
      * @param string $mode fopen mode (e.g. "r", "w", "rb").
      *
-     * @return mixed Stream handle or false on failure.
+     * @return mixed Stream handle (resource) or false on failure.
+     * @phpstan-return resource|false
      */
-    public function fopen(string $path, string $mode): mixed;
+    public function fopen(string $path, string $mode);
 
     /**
      * Close a file or stream handle.

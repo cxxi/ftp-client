@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('sftp')]
 final class SftpChmodTest extends SftpIntegrationTestCase
 {
-    public function test_chmod_changes_mode_or_is_skipped_if_not_supported(): void
+    public function testChmodChangesModeOrIsSkippedIfNotSupported(): void
     {
         $this->requireSsh2();
         $client = $this->client();

@@ -47,6 +47,7 @@ services:
     entrypoint: ["/bin/sh", "-lc", "sftp-authorize-key"]
 
   php:
+    image: ftp-client-php-sftp
     build:
       context: .
       dockerfile: Dockerfile.integration.sftp

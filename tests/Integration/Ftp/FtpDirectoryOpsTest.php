@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('ftp')]
 final class FtpDirectoryOpsTest extends FtpIntegrationTestCase
 {
-    public function test_make_isDirectory_removeDirectory(): void
+    public function testMakeIsDirectoryRemoveDirectory(): void
     {
         $this->requireFtpExt();
         $client = $this->client();
@@ -44,7 +44,7 @@ final class FtpDirectoryOpsTest extends FtpIntegrationTestCase
         @\unlink($local);
     }
 
-    public function test_removeDirectoryRecursive_deletes_tree(): void
+    public function testRemoveDirectoryRecursiveDeletesTree(): void
     {
         $this->requireFtpExt();
         $client = $this->client();
