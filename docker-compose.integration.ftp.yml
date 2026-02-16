@@ -1,0 +1,35 @@
+services:
+
+  ftp:
+    image: stilliard/pure-ftpd:hardened
+    ports:
+      - "2121:21"
+      - "21100-21110:21100-21110"
+    environment:
+      PUBLICHOST: ftp
+      FTP_USER_NAME: test
+      FTP_USER_PASS: test
+      FTP_USER_HOME: "/home/pureftpd/test"
+      FTP_PASSIVE_PORTS: "21100:21110"
+    volumes:
+      - ftp_user_home:/home/pureftpd
+    command: ["/run.sh", "-c", "30", "-C", "10", "-l", "puredb:/etc/pure-ftpd/pureftpd.pdb", "-E", "-j", "-P", "ftp", "-p", "21100:21110"]
+
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile.integration.ftp
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - integration_state:/state
+    environment:
+      FTP_HOST: ftp
+      FTP_PORT: 21
+      FTP_USER: test
+      FTP_PASS: test
+    command: ["bash", "-lc", "bin/integration"]
+
+volumes:
+  integration_state:
+  ftp_user_home:

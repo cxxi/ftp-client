@@ -93,8 +93,15 @@ interface Ssh2FunctionsInterface
     /**
      * Retrieve the server host key fingerprint.
      *
+     * Typical flags come from ext-ssh2 constants:
+     * - SSH2_FINGERPRINT_MD5
+     * - SSH2_FINGERPRINT_SHA1
+     * combined with:
+     * - SSH2_FINGERPRINT_HEX (default)
+     * - SSH2_FINGERPRINT_RAW
+     *
      * @param mixed $connection SSH connection handle.
-     * @param int   $flags      Fingerprint flags (e.g. SSH2_FINGERPRINT_SHA256).
+     * @param int   $flags      Fingerprint flags.
      *
      * @return string|false Fingerprint string or false on failure.
      */

@@ -61,38 +61,50 @@ final readonly class FtpUrl
      */
     public static function parse(string $url): self
     {
+        if (\preg_match('#^(?<scheme>[a-z][a-z0-9+\-.]*):\/\/(?<rest>.*)$#i', $url, $m) === 1) {
+
+            $rest = $m['rest'];
+
+            if ($rest !== '' && ($rest[0] === '/' || $rest[0] === ':' || $rest[0] === '@')) {
+                throw new InvalidFtpUrlException(sprintf(
+                    'Invalid FTP URL: missing host. URL: "%s".',
+                    $url
+                ));
+            }
+        }
+
         $parts = \parse_url($url);
 
-        if (!is_array($parts)) {
+        if (!\is_array($parts)) {
             throw new InvalidFtpUrlException(sprintf(
                 'Invalid FTP URL: unable to parse. URL: "%s".',
                 $url
             ));
         }
 
-        if (empty($parts['scheme'])) {
+        if (!isset($parts['scheme']) || $parts['scheme'] === '') {
             throw new InvalidFtpUrlException(sprintf(
                 'Invalid FTP URL: missing scheme (expected "ftp", "ftps" or "sftp"). URL: "%s".',
                 $url
             ));
         }
 
-        if (empty($parts['host'])) {
+        if (!isset($parts['host']) || $parts['host'] === '') {
             throw new InvalidFtpUrlException(sprintf(
                 'Invalid FTP URL: missing host. URL: "%s".',
                 $url
             ));
         }
 
-        $protocol = Protocol::fromScheme((string) $parts['scheme']);
+        $protocol = Protocol::fromScheme($parts['scheme']);
 
-        $rawPath = (string) ($parts['path'] ?? '');
-        $path = $rawPath === '' ? '/' : '/' . ltrim($rawPath, '/');
+        $rawPath = $parts['path'] ?? '';
+        $path = $rawPath === '' ? '/' : '/' . \ltrim($rawPath, '/');
 
         return new self(
             protocol: $protocol,
-            host: (string) $parts['host'],
-            port: isset($parts['port']) ? (int) $parts['port'] : null,
+            host: $parts['host'],
+            port: $parts['port'] ?? null,
             user: isset($parts['user']) ? \rawurldecode($parts['user']) : null,
             pass: isset($parts['pass']) ? \rawurldecode($parts['pass']) : null,
             path: $path

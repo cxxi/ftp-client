@@ -9,14 +9,22 @@
   cacheDirectory=".phpunit.cache"
 >
   <testsuites>
-    <testsuite name="cxxi/ftp-client">
-      <directory>tests</directory>
-    </testsuite>
+    
+      <testsuite name="unit">
+          <directory>tests/Unit</directory>
+      </testsuite>
+      
+      <testsuite name="integration">
+          <directory>tests/Integration</directory>
+      </testsuite>
+      
   </testsuites>
 
   <source>
+    
     <include>
       <directory suffix=".php">src</directory>
     </include>
+    
   </source>
 </phpunit>

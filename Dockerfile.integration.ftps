@@ -1,0 +1,43 @@
+FROM php:8.2-cli-bullseye
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      git unzip openssh-client netcat-openbsd \
+      ca-certificates \
+      libssl-dev \
+      libcurl4-openssl-dev \
+      libreadline-dev \
+      zlib1g-dev \
+      libsqlite3-dev \
+      libonig-dev \
+      libxml2-dev \
+      $PHPIZE_DEPS; \
+    rm -rf /var/lib/apt/lists/*
+
+# Rebuild PHP from bundled source with --enable-ftp (static), and keep config paths consistent
+RUN set -eux; \
+    docker-php-source extract; \
+    cd /usr/src/php; \
+    ./buildconf --force; \
+    ./configure \
+      --with-config-file-path=/usr/local/etc/php \
+      --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
+      --with-openssl \
+      --with-curl \
+      --with-readline \
+      --with-zlib \
+      --enable-mbstring \
+      --enable-ftp \
+    ; \
+    make -j"$(nproc)"; \
+    make install; \
+    make clean; \
+    docker-php-source delete; \
+    \
+    # cleanup build deps
+    apt-get purge -y --auto-remove $PHPIZE_DEPS
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /app

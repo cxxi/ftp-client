@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
  *
  * Key features:
  * - Connection establishment with configurable host key algorithm
- * - Optional strict host key checking using an expected SHA256 fingerprint
+ * - Optional strict host key checking using an expected MD5/SHA1 fingerprint (as supported by ext-ssh2)
  * - Password and public key authentication
  * - Common filesystem operations (list, upload, download, delete, mkdir, rmdir, chmod, stat-based checks)
  * - Uses {@see AbstractClient::withRetry()} for retriable, protocol-specific operations
@@ -45,9 +45,10 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
     private const DEFAULT_HOST_KEY_ALGO = HostKeyAlgo::SSH_RSA;
 
     /**
-     * ext-ssh2 fingerprint flag for SHA256 Base64 output.
+     * Supported fingerprint algorithms via ext-ssh2.
      */
-    private const FINGERPRINT_SHA256_BASE64 = 2;
+    public const FINGERPRINT_ALGO_MD5 = 'md5';
+    public const FINGERPRINT_ALGO_SHA1 = 'sha1';
 
     /**
      * Extension checker used to verify that required PHP extensions are loaded.
@@ -136,7 +137,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
 
         $hostKeyAlgo = $rawHostKeyAlgo instanceof HostKeyAlgo
             ? $rawHostKeyAlgo->value
-            : (string) $rawHostKeyAlgo;
+            : $rawHostKeyAlgo;
 
         $this->logger->info('SFTP transport connecting', [
             'protocol' => $this->protocol->value,
@@ -215,7 +216,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $user ??= $this->user;
         $pass ??= $this->pass;
 
-        if (!$user || !$pass) {
+        if ($user === null || $user === '' || $pass === null || $pass === '') {
             throw new AuthenticationException('Missing username or password for login.');
         }
 
@@ -277,7 +278,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         }
 
         $user ??= $this->user;
-        if (!$user) {
+        if ($user === null || $user === '') {
             throw new AuthenticationException('Username must be provided for public key authentication.');
         }
 
@@ -366,7 +367,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $this->assertSsh2Extension();
 
         $sftp = $this->warnings->run(fn () => $this->ssh2->sftp($this->connection));
-        if (!$sftp) {
+        if ($sftp === false || $sftp === null) {
             throw new ConnectionException('Failed to initialize SFTP subsystem.');
         }
 
@@ -416,7 +417,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $this->assertSsh2Extension();
 
         $sftp = $this->warnings->run(fn () => $this->ssh2->sftp($this->connection));
-        if (!$sftp) {
+        if ($sftp === false || $sftp === null) {
             throw new ConnectionException('Failed to initialize SFTP subsystem.');
         }
 
@@ -438,10 +439,10 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             throw new TransferException(sprintf('Unable to open local file "%s" for writing.', $localFilePath));
         }
 
-        if ($this->options->timeout) {
-            $seconds = $this->options->timeout;
-            $this->warnings->run(fn () => $this->streams->streamSetTimeout($remote, $seconds));
-            $this->warnings->run(fn () => $this->streams->streamSetTimeout($local, $seconds));
+        $timeout = $this->options->timeout;
+        if ($timeout !== null && $timeout > 0) {
+            $this->warnings->run(fn () => $this->streams->streamSetTimeout($remote, $timeout));
+            $this->warnings->run(fn () => $this->streams->streamSetTimeout($local, $timeout));
         }
 
         try {
@@ -467,7 +468,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $this->assertSsh2Extension();
 
         $sftp = $this->warnings->run(fn () => $this->ssh2->sftp($this->connection));
-        if (!$sftp) {
+        if ($sftp === false || $sftp === null) {
             throw new ConnectionException('Failed to initialize SFTP subsystem.');
         }
 
@@ -489,10 +490,10 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             ));
         }
 
-        if ($this->options->timeout) {
-            $seconds = $this->options->timeout;
-            $this->warnings->run(fn () => $this->streams->streamSetTimeout($local, $seconds));
-            $this->warnings->run(fn () => $this->streams->streamSetTimeout($remote, $seconds));
+        $timeout = $this->options->timeout;
+        if ($timeout !== null && $timeout > 0) {
+            $this->warnings->run(fn () => $this->streams->streamSetTimeout($local, $timeout));
+            $this->warnings->run(fn () => $this->streams->streamSetTimeout($remote, $timeout));
         }
 
         try {
@@ -523,7 +524,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $this->assertSsh2Extension();
 
         $sftp = $this->warnings->run(fn () => $this->ssh2->sftp($this->connection));
-        if (!$sftp) {
+        if ($sftp === false || $sftp === null) {
             throw new ConnectionException('Failed to initialize SFTP subsystem.');
         }
 
@@ -579,9 +580,15 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         $this->assertSsh2Extension();
 
         $sftp = $this->requireSftp();
+
+        $raw = \trim($remoteDir);
+        if ($raw === '' || $raw === '.') {
+            return;
+        }
+
         $fullPath = $this->normalizeRemotePath($remoteDir);
 
-        $dir = trim($fullPath);
+        $dir = \trim($fullPath);
         if ($dir === '' || $dir === '/') {
             return;
         }
@@ -592,8 +599,11 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             return;
         }
 
-        /** @var array<int, string> $parts */
-        $parts = array_values(array_filter(explode('/', $dir), static fn ($p) => $p !== ''));
+        /** @var list<non-empty-string> $parts */
+        $parts = array_values(array_filter(
+            explode('/', $dir),
+            static fn (string $p): bool => $p !== ''
+        ));
 
         $current = $isAbsolute ? '/' : '';
 
@@ -817,7 +827,7 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
             safe: true
         );
 
-        if (!$sftp) {
+        if ($sftp === false || $sftp === null) {
             throw new ConnectionException(sprintf(
                 'Failed to initialize SFTP subsystem.%s',
                 $this->warnings->formatLastWarning()
@@ -830,69 +840,229 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
     /**
      * Verify the server host key fingerprint against configured expectations.
      *
-     * If strict host key checking is enabled and no expected fingerprint is provided,
-     * the connection is invalidated and a {@see ConnectionException} is thrown.
-     *
-     * If an expected fingerprint is provided and differs from the server fingerprint,
-     * the connection is invalidated and a {@see ConnectionException} is thrown.
+     * Rules:
+     * - If strict host key checking is enabled and no expected fingerprint is provided -> fail.
+     * - If expected fingerprint is provided -> compare with server fingerprint (MD5/SHA1 only with ext-ssh2).
+     * - If a SHA256 fingerprint is provided -> fail (not supported via ext-ssh2 API).
      *
      * @throws ConnectionException If strict checking requirements are not met or fingerprints mismatch.
+     * @throws MissingExtensionException If ext-ssh2 is not available.
      */
     private function assertHostKeyVerified(): void
     {
-        $actual = $this->getServerFingerprintSha256();
+        $expectedParsed = $this->parseExpectedFingerprint($this->options->expectedFingerprint);
 
-        $this->logger->info('SFTP transport server fingerprint retrieved', [
-            'host' => $this->host,
-            'port' => $this->port ?? 22,
-            'fingerprint' => \substr($actual, 0, 16) . '…'
-        ]);
-
-        $expected = $this->normalizeExpectedFingerprint($this->options->expectedFingerprint);
-
-        if ($this->options->strictHostKeyChecking && $expected === null) {
+        if ($this->options->strictHostKeyChecking && $expectedParsed === null) {
             $this->invalidateConnection();
-            throw new ConnectionException(sprintf(
+            throw new ConnectionException(\sprintf(
                 'Strict host key checking is enabled but no expected fingerprint is configured for "%s".',
                 $this->host
             ));
         }
 
-        if ($expected !== null && !\hash_equals($expected, $actual)) {
+        // No expectation => no verification (unless strict, handled above)
+        if ($expectedParsed === null) {
+            return;
+        }
+
+        $algo = $expectedParsed['algo'];
+        $expectedNormalized = $expectedParsed['fingerprint'];
+
+        $actual = $this->getServerFingerprintHex($algo);
+
+        $this->logger->info('SFTP transport server fingerprint retrieved', [
+            'host' => $this->host,
+            'port' => $this->port ?? 22,
+            'fingerprintAlgo' => strtoupper($algo),
+            'fingerprint' => \substr($actual, 0, 12) . '…',
+        ]);
+
+        if (!\hash_equals($expectedNormalized, $actual)) {
             $this->invalidateConnection();
-            throw new ConnectionException(sprintf(
-                'SFTP host key fingerprint mismatch for "%s".',
-                $this->host
+            throw new ConnectionException(\sprintf(
+                'SFTP host key fingerprint mismatch for "%s" (%s).',
+                $this->host,
+                strtoupper($algo)
             ));
         }
     }
 
     /**
-     * Retrieve the server host key fingerprint as a SHA256 string.
+     * Retrieve the server host key fingerprint as HEX without separators.
      *
-     * Returned format is normalized to "SHA256:<base64>".
+     * ext-ssh2 exposes only:
+     * - SSH2_FINGERPRINT_MD5
+     * - SSH2_FINGERPRINT_SHA1
+     * combined with SSH2_FINGERPRINT_HEX (default) or SSH2_FINGERPRINT_RAW.
      *
-     * @return string
+     * @param string $algo One of: self::FINGERPRINT_ALGO_MD5, self::FINGERPRINT_ALGO_SHA1
+     *
+     * @return non-empty-string Normalized fingerprint: uppercase hex without separators.
      *
      * @throws ConnectionException If the fingerprint cannot be retrieved.
+     * @throws MissingExtensionException If ext-ssh2 does not provide needed constants.
      */
-    private function getServerFingerprintSha256(): string
+    private function getServerFingerprintHex(string $algo): string
     {
-        $fingerprint = $this->warnings->run(fn () => $this->ssh2->fingerprint(
+        $flagConst = match ($algo) {
+            self::FINGERPRINT_ALGO_MD5 => 'SSH2_FINGERPRINT_MD5',
+            self::FINGERPRINT_ALGO_SHA1 => 'SSH2_FINGERPRINT_SHA1',
+            default => null,
+        };
+
+        if ($flagConst === null || !\defined($flagConst)) {
+            $this->invalidateConnection();
+            throw new MissingExtensionException(sprintf(
+                'Fingerprint algorithm "%s" is not supported by ext-ssh2. Available algorithms: MD5, SHA1.',
+                $algo
+            ));
+        }
+
+        // HEX is the default, but we make it explicit for clarity/consistency.
+        if (!\defined('SSH2_FINGERPRINT_HEX')) {
+            $this->invalidateConnection();
+            throw new MissingExtensionException('ext-ssh2 is required for SFTP operations.');
+        }
+
+        /** @var int $flags */
+        $flags = (\constant($flagConst) | \constant('SSH2_FINGERPRINT_HEX'));
+
+        $fingerprintHex = $this->warnings->run(fn () => $this->ssh2->fingerprint(
             $this->connection,
-            self::FINGERPRINT_SHA256_BASE64
+            $flags
         ));
 
-        if ($fingerprint === false) {
+        if ($fingerprintHex === false) {
             $this->invalidateConnection();
-            throw new ConnectionException(sprintf(
+            throw new ConnectionException(\sprintf(
                 'Unable to retrieve server host key fingerprint for "%s".%s',
                 $this->host,
                 $this->warnings->formatLastWarning()
             ));
         }
 
-        return 'SHA256:' . $fingerprint;
+        $normalized = $this->normalizeHexFingerprint($fingerprintHex);
+
+        if ($normalized === '') {
+            $this->invalidateConnection();
+            throw new ConnectionException(\sprintf(
+                'Unable to retrieve server host key fingerprint for "%s" (empty value).%s',
+                $this->host,
+                $this->warnings->formatLastWarning()
+            ));
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Parse and normalize a configured expected fingerprint.
+     *
+     * Accepted inputs:
+     * - "MD5:aa:bb:cc:..." (colons optional, case-insensitive)
+     * - "SHA1:aa:bb:..." (colons optional, case-insensitive)
+     * - bare hex string (length 32 => MD5, length 40 => SHA1)
+     *
+     * Rejected inputs:
+     * - "SHA256:..." (not supported with ext-ssh2)
+     *
+     * @return array{algo: self::FINGERPRINT_ALGO_MD5|self::FINGERPRINT_ALGO_SHA1, fingerprint: non-empty-string}|null
+     *         Normalized fingerprint is uppercase hex without separators.
+     *
+     * @throws ConnectionException If SHA256 is provided or if the value is malformed.
+     */
+    private function parseExpectedFingerprint(?string $expected): ?array
+    {
+        if ($expected === null) {
+            return null;
+        }
+
+        $value = \trim($expected);
+        if ($value === '') {
+            return null;
+        }
+
+        if (\stripos($value, 'sha256:') === 0) {
+            $this->invalidateConnection();
+            throw new ConnectionException(
+                'SHA256 fingerprints are not supported with ext-ssh2. Available algorithms: MD5, SHA1.'
+            );
+        }
+
+        $algo = null;
+        $raw = $value;
+
+        if (\stripos($value, 'md5:') === 0) {
+            $algo = self::FINGERPRINT_ALGO_MD5;
+            $raw = \trim(\substr($value, 4));
+        } elseif (\stripos($value, 'sha1:') === 0) {
+            $algo = self::FINGERPRINT_ALGO_SHA1;
+            $raw = \trim(\substr($value, 5));
+        }
+
+        $normalized = $this->normalizeHexFingerprint($raw);
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        if ($algo === null) {
+            $len = \strlen($normalized);
+            if ($len === 32) {
+                $algo = self::FINGERPRINT_ALGO_MD5;
+            } elseif ($len === 40) {
+                $algo = self::FINGERPRINT_ALGO_SHA1;
+            } else {
+                $this->invalidateConnection();
+                throw new ConnectionException(sprintf(
+                    'Invalid expected fingerprint format for "%s". Provide "MD5:<hex>" or "SHA1:<hex>".',
+                    $this->host
+                ));
+            }
+        }
+
+        $expectedLen = $algo === self::FINGERPRINT_ALGO_MD5 ? 32 : 40;
+        if (\strlen($normalized) !== $expectedLen) {
+            $this->invalidateConnection();
+            throw new ConnectionException(sprintf(
+                'Invalid %s fingerprint length for "%s".',
+                strtoupper($algo),
+                $this->host
+            ));
+        }
+
+        /** @var non-falsy-string $normalized */
+        return [
+            'algo' => $algo,
+            'fingerprint' => $normalized,
+        ];
+    }
+
+    /**
+     * Normalize a hex fingerprint string:
+     * - trims
+     * - removes separators (":" and spaces)
+     * - uppercases
+     * - keeps only [0-9A-F]
+     *
+     * @return string Uppercase hex without separators, or empty string if nothing usable.
+     */
+    private function normalizeHexFingerprint(string $value): string
+    {
+        $v = \trim($value);
+        if ($v === '') {
+            return '';
+        }
+
+        // Remove common separators
+        $v = \str_replace([':', ' ', "\t", "\n", "\r"], '', $v);
+
+        // Keep only hex chars
+        $v = \preg_replace('/[^0-9a-fA-F]/', '', $v) ?? '';
+
+        $v = \strtoupper($v);
+
+        return $v;
     }
 
     /**
@@ -923,39 +1093,6 @@ final class SftpClient extends AbstractClient implements SftpClientTransportInte
         }
 
         return str_starts_with($p, '/') ? $p : Path::joinRemote($this->path, $p);
-    }
-
-    /**
-     * Normalize an expected fingerprint string to "SHA256:<base64>".
-     *
-     * Accepts:
-     * - "SHA256:<base64>"
-     * - "<base64>"
-     * - "sha256:<base64>"
-     *
-     * @param string|null $expected Raw configured fingerprint.
-     *
-     * @return string|null Normalized fingerprint or null if empty/invalid.
-     */
-    private function normalizeExpectedFingerprint(?string $expected): ?string
-    {
-        if ($expected === null) {
-            return null;
-        }
-
-        $v = \trim($expected);
-        if ($v === '') {
-            return null;
-        }
-
-        if (\stripos($v, 'sha256:') === 0) {
-            $v = \trim(\substr($v, 7));
-            if ($v === '') {
-                return null;
-            }
-        }
-
-        return 'SHA256:' . $v;
     }
 
     /**

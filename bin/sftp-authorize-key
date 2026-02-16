@@ -1,0 +1,47 @@
+#!/usr/bin/env sh
+set -eu
+
+: "${SFTP_USER:=test}"
+
+KEY_DIR="/state/keys"
+PUB="$KEY_DIR/id_ed25519.pub"
+
+# Wait for pubkey to exist (race-proof)
+i=0
+while [ $i -lt 200 ]; do
+  [ -s "$PUB" ] && break
+  i=$((i+1))
+  sleep 0.1
+done
+
+if [ ! -s "$PUB" ]; then
+  echo "Missing $PUB" >&2
+  ls -la "$KEY_DIR" >&2 || true
+  exit 1
+fi
+
+HOME_DIR="/home/${SFTP_USER}"
+SSH_DIR="${HOME_DIR}/.ssh"
+AUTH_KEYS="${SSH_DIR}/authorized_keys"
+
+mkdir -p "$SSH_DIR"
+
+# Atomic write for authorized_keys (avoid partial reads)
+tmp_auth="${AUTH_KEYS}.tmp"
+cat "$PUB" > "$tmp_auth"
+chmod 600 "$tmp_auth"
+mv -f "$tmp_auth" "$AUTH_KEYS"
+
+# Permissions/ownership (important for sshd)
+chmod 700 "$SSH_DIR"
+
+# atmoz/sftp uses 1001:1001 in your compose (test:test:1001:1001:upload)
+chown -R 1001:1001 "$SSH_DIR"
+
+# Marker for the php container (atomic)
+ok="/state/authorized_keys.ok"
+tmp_ok="${ok}.tmp"
+echo "ok" > "$tmp_ok"
+mv -f "$tmp_ok" "$ok"
+
+echo "Wrote $AUTH_KEYS and $ok"

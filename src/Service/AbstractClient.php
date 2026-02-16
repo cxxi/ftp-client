@@ -6,6 +6,8 @@ namespace Cxxi\FtpClient\Service;
 
 use Cxxi\FtpClient\Contracts\ClientTransportInterface;
 use Cxxi\FtpClient\Enum\Protocol;
+use Cxxi\FtpClient\Exception\FtpClientException;
+use Cxxi\FtpClient\Exception\MissingExtensionException;
 use Cxxi\FtpClient\Exception\TransferException;
 use Cxxi\FtpClient\Infrastructure\Native\NativeFilesystemFunctions;
 use Cxxi\FtpClient\Infrastructure\Port\FilesystemFunctionsInterface;
@@ -268,7 +270,7 @@ abstract class AbstractClient implements ClientTransportInterface
     public function isDirectory(string $remotePath): bool
     {
         $this->assertReadyForTransfer('check directory');
-        return (bool) $this->withRetry('isDirectory', fn () => $this->doIsDirectory($remotePath), safe: true);
+        return $this->withRetry('isDirectory', fn () => $this->doIsDirectory($remotePath), safe: true);
     }
 
     /**
@@ -593,7 +595,7 @@ abstract class AbstractClient implements ClientTransportInterface
      */
     protected function withRetry(string $operation, callable $fn, bool $safe = true): mixed
     {
-        $max = max(0, (int) $this->options->retryMax);
+        $max = max(0, $this->options->retryMax);
 
         if ($max === 0) {
             return $fn();
@@ -603,14 +605,14 @@ abstract class AbstractClient implements ClientTransportInterface
             return $fn();
         }
 
-        $delayMs = max(0, (int) $this->options->retryDelayMs);
+        $delayMs = max(0, $this->options->retryDelayMs);
 
-        $backoff = (float) $this->options->retryBackoff;
+        $backoff = $this->options->retryBackoff;
         if ($backoff <= 0) {
             $backoff = 2.0;
         }
 
-        $jitter = (bool) $this->options->retryJitter;
+        $jitter = $this->options->retryJitter;
 
         $attempt = 0;
         $sleepMs = $delayMs;
@@ -620,11 +622,11 @@ abstract class AbstractClient implements ClientTransportInterface
                 return $fn();
             } catch (\Throwable $e) {
 
-                if (!$e instanceof \Cxxi\FtpClient\Exception\FtpClientException) {
+                if (!$e instanceof FtpClientException) {
                     throw $e;
                 }
 
-                if ($e instanceof \Cxxi\FtpClient\Exception\MissingExtensionException) {
+                if ($e instanceof MissingExtensionException) {
                     throw $e;
                 }
 

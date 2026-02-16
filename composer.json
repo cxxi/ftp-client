@@ -15,7 +15,8 @@
   "require-dev": {
     "phpunit/phpunit": "^11.0",
     "friendsofphp/php-cs-fixer": "^3.94",
-    "phpstan/phpstan": "^2.1"
+    "phpstan/phpstan": "^2.1",
+    "phpstan/phpstan-strict-rules": "^2.0"
   },
   "autoload-dev": {
     "psr-4": {
@@ -24,11 +25,39 @@
   },
   "scripts": {
     "phpstan": "phpstan analyse",
-    "phpstan:9": "phpstan analyse -c phpstan9.neon",
     "cs": "php-cs-fixer fix",
     "cs:check": "php-cs-fixer fix --dry-run --diff",
-    "test": "phpunit",
-    "test:coverage": "php -d xdebug.mode=coverage vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml"
+    "test": "phpunit --testsuite unit",
+    "test:unit": "phpunit --testsuite unit",
+    "test:integration:ftp": [
+      "docker compose -f docker-compose.integration.ftp.yml up -d --build",
+      "docker compose -f docker-compose.integration.ftp.yml run --rm -e INTEGRATION_TARGET=ftp php",
+      "docker compose -f docker-compose.integration.ftp.yml down -v --remove-orphans"
+    ],
+    "test:integration:ftps": [
+      "docker compose -f docker-compose.integration.ftps.yml up -d --build ftps-cert",
+      "docker compose -f docker-compose.integration.ftps.yml run --rm ftps-cert",
+      "docker compose -f docker-compose.integration.ftps.yml up -d --build ftps",
+      "docker compose -f docker-compose.integration.ftps.yml run --rm -e INTEGRATION_TARGET=ftps php",
+      "docker compose -f docker-compose.integration.ftps.yml down -v --remove-orphans"
+    ],
+    "test:integration:sftp": [
+      "docker compose -f docker-compose.integration.sftp.yml up -d --build",
+      "docker compose -f docker-compose.integration.sftp.yml run --rm fingerprint",
+      "docker compose -f docker-compose.integration.sftp.yml run --rm -e INTEGRATION_TARGET=sftp php",
+      "docker compose -f docker-compose.integration.sftp.yml down -v --remove-orphans"
+    ],
+    "test:integration": [
+      "@test:integration:ftp",
+      "@test:integration:ftps",
+      "@test:integration:sftp"
+    ],
+    "test:all": [
+      "@test:unit",
+      "@test:integration"
+    ],
+    "test:coverage": "php -d xdebug.mode=coverage vendor/bin/phpunit --testsuite unit --coverage-text --coverage-clover=coverage.xml",
+    "test:coverage:html": "php -d xdebug.mode=coverage vendor/bin/phpunit --testsuite unit --coverage-html coverage"
   },
   "suggest": {
     "ext-ftp": "Required for FTP/FTPS operations.",

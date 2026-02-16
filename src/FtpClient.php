@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cxxi\FtpClient;
 
+use Cxxi\FtpClient\Contracts\ClientTransportFactoryInterface;
 use Cxxi\FtpClient\Contracts\ClientTransportInterface;
 use Cxxi\FtpClient\Model\ConnectionOptions;
 use Cxxi\FtpClient\Service\ClientFactory;
@@ -61,6 +62,37 @@ final class FtpClient
         ?ConnectionOptions $options = null,
         ?LoggerInterface $logger = null
     ): ClientTransportInterface {
-        return (new ClientFactory())->create($url, $options, $logger);
+        return self::factory()->create($url, $options, $logger);
+    }
+
+    /**
+     * Resolve the transport factory instance.
+     *
+     * Returns the overridden factory when provided (typically in tests),
+     * otherwise falls back to the default {@see ClientFactory}.
+     *
+     * @return ClientTransportFactoryInterface
+     */
+    private static function factory(): ClientTransportFactoryInterface
+    {
+        return self::$factoryOverride ?? new ClientFactory();
+    }
+
+    /**
+     * Optional factory override used mainly for testing purposes.
+     *
+     * When set, this factory will be used instead of the default
+     * {@see ClientFactory} instance.
+     *
+     * @internal
+     */
+    private static ?ClientTransportFactoryInterface $factoryOverride = null;
+
+    /**
+     * @internal For tests only.
+     */
+    public static function _setFactoryForTests(?ClientTransportFactoryInterface $factory): void
+    {
+        self::$factoryOverride = $factory;
     }
 }

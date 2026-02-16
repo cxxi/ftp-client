@@ -185,7 +185,7 @@ abstract class AbstractFtpClient extends AbstractClient
         $user ??= $this->user;
         $pass ??= $this->pass;
 
-        if (!$user || !$pass) {
+        if ($user === null || $user === '' || $pass === null || $pass === '') {
             throw new AuthenticationException('Missing username or password for login.');
         }
 
@@ -471,8 +471,11 @@ abstract class AbstractFtpClient extends AbstractClient
             return;
         }
 
-        /** @var array<int, string> $parts */
-        $parts = array_values(array_filter(explode('/', $dir), static fn ($p) => $p !== ''));
+        /** @var list<non-empty-string> $parts */
+        $parts = array_values(array_filter(
+            explode('/', $dir),
+            static fn (string $p): bool => $p !== ''
+        ));
 
         $current = $isAbsolute ? '/' : '';
 
@@ -521,7 +524,6 @@ abstract class AbstractFtpClient extends AbstractClient
 
             return;
         }
-
     }
 
     /**
@@ -744,7 +746,6 @@ abstract class AbstractFtpClient extends AbstractClient
             return;
         }
 
-        // AUTO mode
         $this->warnings->run(fn () => $this->ftp->pasv($this->connection, true));
 
         $list = $this->warnings->run(fn () => $this->ftp->nlist($this->connection, '.'));

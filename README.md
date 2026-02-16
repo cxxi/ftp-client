@@ -3,6 +3,8 @@
 
 [![PHP Version](https://img.shields.io/badge/php-8.2%2B-blue.svg)](https://php.net)
 [![CI](https://github.com/cxxi/ftp-client/actions/workflows/ci.yml/badge.svg)](https://github.com/cxxi/ftp-client/actions)
+[![Tests](https://img.shields.io/badge/tests-unit%20%2B%20integration-brightgreen.svg)](https://github.com/cxxi/ftp-client/actions)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/cxxi/ftp-client)
 [![PHPStan Level](https://img.shields.io/badge/phpstan-level%208-brightgreen.svg)](https://phpstan.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Packagist](https://img.shields.io/packagist/v/cxxi/ftp-client.svg)](https://packagist.org/packages/cxxi/ftp-client)
@@ -71,7 +73,7 @@ Designed for unstable networks and production systems.
 ### Secure SFTP Support
 
 * Host key algorithm control
-* SHA256 fingerprint verification
+* MD5 / SHA1 fingerprint verification (via ext-ssh2)
 * Strict host key checking option
 
 No silent trust of unknown hosts.
@@ -98,6 +100,18 @@ Works in:
 * Cron jobs
 
 No framework dependency.
+
+### Production Ready
+
+This library is:
+
+* Fully covered by unit tests (100%)
+* Integration tested against real FTP / FTPS / SFTP servers
+* Static-analysis clean (PHPStan level 8)
+* Free of global state
+* Designed for deterministic error handling
+
+It is built to be used in critical environments where network instability and safe retries matter.
 
 ---
 
@@ -217,18 +231,45 @@ Ignored for SFTP.
 
 ### SFTP Host Key Verification
 
-SFTP supports strict host key verification using SHA256 fingerprint.
+SFTP supports strict host key verification using MD5 or SHA1 fingerprints
+(as supported by ext-ssh2).
 
 ```php
 $options = new ConnectionOptions(
     hostKeyAlgo: 'ssh-ed25519',
-    expectedFingerprint: 'SHA256:xxxxxx...',
+    expectedFingerprint: 'MD5:aa:bb:cc:dd:...',
     strictHostKeyChecking: true
 );
 ```
 
 If `strictHostKeyChecking` is enabled and fingerprint does not match,
 connection will fail.
+
+---
+
+## SFTP Fingerprint Limitations (ext-ssh2)
+
+When using the `ext-ssh2` extension (PECL ssh2), only the following
+fingerprint algorithms are available via `ssh2_fingerprint()`:
+
+* `MD5`
+* `SHA1`
+
+The extension does **not** expose SHA256 fingerprints, even though
+the underlying libssh2 library supports it.
+
+As a consequence:
+
+* `SHA256:` fingerprints (OpenSSH default format) cannot be verified
+  when using ext-ssh2.
+* Only `MD5:` and `SHA1:` prefixed fingerprints are supported.
+* There is no automatic fallback between algorithms.
+
+If a `SHA256:` fingerprint is provided, the connection will fail
+when strict host key checking is enabled.
+
+This limitation comes from the PHP extension API, not from the
+library itself.
 
 ---
 
@@ -408,17 +449,132 @@ This design allows easy mocking and full unit testing.
 
 ---
 
-## Tests
+## Roadmap
+
+Planned future improvements:
+
+### phpseclib backend
+
+Add optional support for `phpseclib` as an alternative SFTP backend.
+
+Benefits:
+
+* Native SHA256 fingerprint support (OpenSSH compatible)
+* No dependency on ext-ssh2
+* Greater portability
+
+---
+
+### known_hosts Support
+
+Add support for OpenSSH-style `known_hosts` verification:
+
+* Automatic host key persistence
+* TOFU (Trust On First Use) mode
+* Strict host verification policies
+
+---
+
+### Extended Fingerprint Support
+
+Expose SHA256 fingerprint verification when available
+(via phpseclib backend or future ext-ssh2 improvements).
+
+---
+
+## Quality & Tests
+
+This library is designed for reliability in production environments.
+
+The test suite includes:
+
+### Unit Tests
+
+* 100% code coverage on the core domain and infrastructure
+* Strict PHPUnit 11 configuration
+* Full mocking of native adapters
+* Error handling and retry semantics fully tested
+* PHPStan level 8 clean (source + tests)
+
+Run unit tests:
 
 ```bash
-composer test
+composer test:unit
+````
+
+Generate coverage report:
+
+```bash
+composer test:coverage
 ```
 
-Static analysis:
+---
+
+### Integration Tests
+
+All protocols are tested against real Dockerized servers.
+
+| Protocol | Server                   | Tested Features                                              |
+| -------- | ------------------------ | ------------------------------------------------------------ |
+| FTP      | pure-ftpd                | Active / Passive / Auto mode, transfers, directory ops, MLSD |
+| FTPS     | pure-ftpd (TLS required) | Explicit TLS, transfers, error cases                         |
+| SFTP     | OpenSSH                  | Password auth, public key auth, fingerprint verification     |
+
+Each integration stack is fully isolated and reproducible.
+
+Run individual protocol tests:
+
+```bash
+composer test:integration:ftp
+composer test:integration:ftps
+composer test:integration:sftp
+```
+
+Run all integration tests:
+
+```bash
+composer test:integration
+```
+
+Run everything (unit + integration):
+
+```bash
+composer test:all
+```
+
+---
+
+### Static Analysis
+
+PHPStan level 8 enforced:
 
 ```bash
 composer phpstan
 ```
+
+---
+
+### Code Style
+
+```bash
+composer cs
+composer cs:check
+```
+
+---
+
+### CI
+
+All checks are enforced in CI:
+
+* Unit tests (100% coverage)
+* FTP integration tests
+* FTPS (TLS) integration tests
+* SFTP integration tests
+* PHPStan level 8
+* Coding standards
+
+Every protocol feature documented in this README is covered by automated tests.
 
 ---
 

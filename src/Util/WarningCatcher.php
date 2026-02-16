@@ -15,6 +15,7 @@ namespace Cxxi\FtpClient\Util;
  * - Temporarily installs a custom error handler
  * - Stores the last warning message
  * - Optionally swallows specific error levels (based on a mask)
+ * - Throws when the mask does not match (so the warning "bubbles")
  * - Restores the previous error handler after execution
  */
 final class WarningCatcher
@@ -36,7 +37,7 @@ final class WarningCatcher
      * - E_USER_DEPRECATED
      *
      * Errors matching the mask are swallowed (handler returns true).
-     * Other errors are not swallowed and will bubble up.
+     * Other errors are converted to exceptions and will bubble up.
      */
     public function __construct(
         private readonly int $swallowMask = E_WARNING
@@ -51,10 +52,6 @@ final class WarningCatcher
     /**
      * Execute a callable while capturing warnings.
      *
-     * A temporary error handler is registered during execution.
-     * The last warning message (if any) is stored and can be retrieved
-     * via {@see getLastWarning()} or {@see formatLastWarning()}.
-     *
      * @template T
      *
      * @param callable():T $fn Callable to execute.
@@ -68,8 +65,17 @@ final class WarningCatcher
         \set_error_handler(function (int $errno, string $errstr, ?string $errfile = null, ?int $errline = null): bool {
             $this->lastWarning = $errstr;
 
-            // Return true to swallow the error, false to allow normal handling.
-            return (bool) ($errno & $this->swallowMask);
+            if (($errno & $this->swallowMask) !== 0) {
+                return true;
+            }
+
+            throw new \ErrorException(
+                $errstr,
+                0,
+                $errno,
+                $errfile ?? '',
+                $errline ?? 0
+            );
         });
 
         try {
@@ -81,21 +87,16 @@ final class WarningCatcher
 
     /**
      * Return the last captured warning formatted for inclusion in error messages.
-     *
-     * @return string A formatted string prefixed with " Details: ",
-     *                or an empty string if no warning was captured.
      */
     public function formatLastWarning(): string
     {
-        return $this->lastWarning
+        return ($this->lastWarning !== null && $this->lastWarning !== '')
             ? sprintf(' Details: %s', $this->lastWarning)
             : '';
     }
 
     /**
      * Get the raw last captured warning message.
-     *
-     * @return string|null The last warning message, or null if none was captured.
      */
     public function getLastWarning(): ?string
     {

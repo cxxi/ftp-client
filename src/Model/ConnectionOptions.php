@@ -25,7 +25,9 @@ final readonly class ConnectionOptions
      * @param int|null $timeout Connection/stream timeout in seconds (null to use default).
      * @param PassiveMode $passive Passive mode configuration for FTP/FTPS.
      * @param HostKeyAlgo|string|null $hostKeyAlgo SFTP host key algorithm (enum or raw string).
-     * @param string|null $expectedFingerprint Expected SFTP server fingerprint (SHA256).
+     * @param string|null $expectedFingerprint Expected SFTP server fingerprint.
+     *                                  Supported with ext-ssh2: MD5 / SHA1 (e.g. "MD5:aa:bb:..." or "SHA1:...").
+     *                                  Note: SHA256 fingerprints (OpenSSH default) are not supported via ext-ssh2.
      * @param bool $strictHostKeyChecking Whether strict host key checking is enabled (SFTP).
      * @param int $retryMax Maximum number of retry attempts (0 = no retries).
      * @param int $retryDelayMs Initial retry delay in milliseconds.
@@ -56,7 +58,7 @@ final readonly class ConnectionOptions
      * - passive (bool|int|string)
      * - sftp:
      *     - host_key_algo (HostKeyAlgo|string)
-     *     - expected_fingerprint (string)
+     *     - expected_fingerprint (string) (MD5/SHA1 recommended: "MD5:..", "SHA1:..")
      *     - strict_host_key_checking (bool|int|string)
      * - retry:
      *     - max (int|string)

@@ -5,27 +5,45 @@ declare(strict_types=1);
 namespace Cxxi\FtpClient\Infrastructure\Native;
 
 use Cxxi\FtpClient\Infrastructure\Port\ExtensionCheckerInterface;
+use Cxxi\FtpClient\Infrastructure\Port\NativeFunctionInvokerInterface;
 
 /**
  * Native implementation of {@see ExtensionCheckerInterface}.
  *
- * This class delegates to PHP's built-in {@see extension_loaded()} function
+ * This class delegates to PHP's built-in {@see \extension_loaded()} function
  * to determine whether a given extension is available at runtime.
  *
- * It is primarily used by transport implementations to verify that
- * required extensions (e.g. ext-ftp, ext-ssh2) are installed before use.
+ * The indirection through {@see NativeFunctionInvokerInterface} exists to:
+ * - keep production behavior identical (real global call),
+ * - make unit tests deterministic (no reliance on the runtime environment),
+ * - keep the class `final` without requiring inheritance for testing.
  */
 final class NativeExtensionChecker implements ExtensionCheckerInterface
 {
     /**
+     * Invoker used for calling native/global functions.
+     */
+    private readonly NativeFunctionInvokerInterface $invoke;
+
+    /**
+     * @param NativeFunctionInvokerInterface|null $invoke
+     *        Invoker used to call native functions. If null, a default
+     *        {@see NativeFunctionInvoker} is used.
+     */
+    public function __construct(?NativeFunctionInvokerInterface $invoke = null)
+    {
+        $this->invoke = $invoke ?? new NativeFunctionInvoker();
+    }
+
+    /**
      * Check whether a PHP extension is loaded.
      *
-     * @param string $extension Extension name (e.g. "ftp", "ssh2").
+     * Delegates to {@see \extension_loaded()}.
      *
-     * @return bool True if the extension is loaded, false otherwise.
+     * @param string $extension Extension name (e.g. "ftp", "ssh2", "Core").
      */
     public function loaded(string $extension): bool
     {
-        return \extension_loaded($extension);
+        return (bool) ($this->invoke)('extension_loaded', [$extension]);
     }
 }

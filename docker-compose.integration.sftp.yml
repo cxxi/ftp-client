@@ -1,0 +1,70 @@
+services:
+
+  sftp:
+    image: atmoz/sftp:latest
+    ports:
+      - "2222:22"
+    command: "test:test:1001:1001:upload"
+    volumes:
+      - ./var/sftp/upload:/home/test/upload
+      - ssh_host_keys:/etc/ssh
+      - integration_state:/state
+      - sftp_user_home:/home/test
+
+  fingerprint:
+    image: alpine:3.20
+    depends_on:
+      - sftp
+    volumes:
+      - ssh_host_keys:/etc/ssh:ro
+      - integration_state:/state
+      - ./bin/sftp-fingerprint:/usr/local/bin/sftp-fingerprint:ro
+    environment:
+      FP_HASH: md5
+    entrypoint: ["/bin/sh", "-lc", "sftp-fingerprint"]
+
+  keygen:
+    image: alpine:3.20
+    volumes:
+      - integration_state:/state
+      - ./bin/sftp-test-key:/usr/local/bin/sftp-test-key:ro
+    entrypoint: ["/bin/sh", "-lc", "sftp-test-key"]
+
+  authorize_key:
+    image: alpine:3.20
+    depends_on:
+      - sftp
+      - keygen
+    volumes:
+      - integration_state:/state
+      - ./var/sftp/upload:/home/test/upload
+      - sftp_user_home:/home/test
+      - ./bin/sftp-authorize-key:/usr/local/bin/sftp-authorize-key:ro
+    environment:
+      SFTP_USER: test
+      SFTP_UID: 1001
+      SFTP_GID: 1001
+    entrypoint: ["/bin/sh", "-lc", "sftp-authorize-key"]
+
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile.integration.sftp
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - integration_state:/state
+    depends_on:
+      - fingerprint
+      - authorize_key
+    environment:
+      SFTP_HOST: sftp
+      SFTP_PORT: 22
+      SFTP_USER: test
+      SFTP_PASS: test
+    command: ["bash", "-lc", "bin/integration"]
+
+volumes:
+  integration_state:
+  ssh_host_keys:
+  sftp_user_home:

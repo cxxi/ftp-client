@@ -51,9 +51,11 @@ final class FtpClient extends AbstractFtpClient implements FtpClientTransportInt
      *
      * @param int|null $timeout Connection timeout in seconds (null to use ext default).
      *
-     * @return mixed Connection handle returned by the FTP adapter (typically a resource or false).
+     * @return resource|false|null
+     *
+     * @phpstan-return resource|false|null
      */
-    protected function doConnectFtp(?int $timeout): mixed
+    protected function doConnectFtp(?int $timeout)
     {
         $port = $this->port ?? 21;
 
