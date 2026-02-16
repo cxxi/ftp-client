@@ -642,32 +642,32 @@ Credentials are never logged by design.
 
 ## Roadmap
 
-### phpseclib backend
+The project roadmap is maintained separately to keep this README focused and concise.
 
-Add optional support for `phpseclib` as an alternative SFTP backend.
+**Full roadmap available here:**
+**[docs/ROADMAP.md](docs/ROADMAP.md)**
 
-Benefits:
+The roadmap covers:
 
-* Native SHA256 fingerprint support (OpenSSH compatible)
-* No dependency on ext-ssh2
-* Greater portability
+* SFTP backend improvements (phpseclib support, SHA256 fingerprints)
+* OpenSSH `known_hosts` integration
+* FTPS security enhancements (TLS controls, certificate validation)
+* Stream-based API & atomic uploads
+* Transfer progress callbacks
+* Resumable transfers
+* Long-running worker stability improvements
+* Observability & structured events
+* Advanced retry safety
+* Performance & scalability explorations
 
----
+All roadmap items follow the project principles:
 
-### known_hosts Support
+* Clean architecture
+* Deterministic behavior
+* Strong safety guarantees
+* Backward compatibility (unless major version bump)
 
-Add support for OpenSSH-style `known_hosts` verification:
-
-* Automatic host key persistence
-* TOFU (Trust On First Use) mode
-* Strict host verification policies
-
----
-
-### Extended Fingerprint Support
-
-Expose SHA256 fingerprint verification when available
-(via phpseclib backend or future ext-ssh2 improvements).
+Community feedback is welcome via GitHub Issues and Discussions.
 
 ---
 
