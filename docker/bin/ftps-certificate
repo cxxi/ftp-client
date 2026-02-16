@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+set -e
+
+CERT_FILE="/state/pure-ftpd.pem"
+
+if [ -s "$CERT_FILE" ]; then
+  echo "FTPS cert already exists: $CERT_FILE"
+  exit 0
+fi
+
+echo "Generating self-signed FTPS certificate: $CERT_FILE"
+
+openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
+  -keyout "$CERT_FILE" \
+  -out "$CERT_FILE" \
+  -subj "/CN=ftps" >/dev/null 2>&1
+
+chmod 600 "$CERT_FILE"
+
+echo "OK"

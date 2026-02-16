@@ -1,0 +1,98 @@
+{
+  "name": "cxxi/ftp-client",
+  "description": "Pure PHP FTP/FTPS/SFTP client (framework agnostic).",
+  "license": "MIT",
+  "type": "library",
+  "autoload": {
+    "psr-4": {
+      "Cxxi\\FtpClient\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=8.2",
+    "psr/log": "^3.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.0",
+    "friendsofphp/php-cs-fixer": "^3.94",
+    "phpstan/phpstan": "^2.1",
+    "phpstan/phpstan-strict-rules": "^2.0"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Cxxi\\FtpClient\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "scripts": {
+    "phpstan": "vendor/bin/phpstan analyse",
+    "cs": "vendor/bin/php-cs-fixer fix",
+    "cs:check": "vendor/bin/php-cs-fixer fix --dry-run --diff",
+    "test:unit": "vendor/bin/phpunit --testsuite unit",
+    "test": "@test:unit",
+    "test:coverage": "php -d xdebug.mode=coverage vendor/bin/phpunit --testsuite unit --coverage-html coverage",
+    "test:coverage:ci": "php -d xdebug.mode=coverage vendor/bin/phpunit --testsuite unit --coverage-clover=coverage.xml",
+    "test:integration:ftp": [
+      "docker compose -f docker/compose/integration.ftp.yml up -d --build",
+      "docker compose -f docker/compose/integration.ftp.yml run --rm -e INTEGRATION_TARGET=ftp php",
+      "docker compose -f docker/compose/integration.ftp.yml down -v --remove-orphans"
+    ],
+    "test:integration:ftps": [
+      "docker compose -f docker/compose/integration.ftps.yml up -d --build ftps-cert",
+      "docker compose -f docker/compose/integration.ftps.yml run --rm ftps-cert",
+      "docker compose -f docker/compose/integration.ftps.yml up -d --build ftps",
+      "docker compose -f docker/compose/integration.ftps.yml run --rm -e INTEGRATION_TARGET=ftps php",
+      "docker compose -f docker/compose/integration.ftps.yml down -v --remove-orphans"
+    ],
+    "test:integration:sftp": [
+      "docker compose -f docker/compose/integration.sftp.yml up -d --build",
+      "docker compose -f docker/compose/integration.sftp.yml run --rm fingerprint",
+      "docker compose -f docker/compose/integration.sftp.yml run --rm -e INTEGRATION_TARGET=sftp php",
+      "docker compose -f docker/compose/integration.sftp.yml down -v --remove-orphans"
+    ],
+    "test:integration": [
+      "@test:integration:ftp",
+      "@test:integration:ftps",
+      "@test:integration:sftp"
+    ],    
+    "test:all": [
+      "@test:unit",
+      "@test:integration"
+    ],
+    "test:ci": [
+      "@phpstan",
+      "@cs:check",
+      "@test:unit"
+    ],
+    "test:ci:full": [
+      "@phpstan",
+      "@cs:check",
+      "@test:all"
+    ],
+    "qa": [
+      "@test:ci"
+    ]
+  },
+  "suggest": {
+    "ext-ftp": "Required for FTP/FTPS operations.",
+    "ext-ssh2": "Required for SFTP operations."
+  },
+  "keywords": [
+    "ftp",
+    "ftps",
+    "sftp",
+    "client",
+    "transfer",
+    "ssh",
+    "upload",
+    "download"
+  ],
+  "support": {
+    "issues": "https://github.com/cxxi/ftp-client/issues",
+    "source": "https://github.com/cxxi/ftp-client"
+  }
+}

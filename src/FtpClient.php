@@ -1,0 +1,98 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Cxxi\FtpClient;
+
+use Cxxi\FtpClient\Contracts\ClientTransportFactoryInterface;
+use Cxxi\FtpClient\Contracts\ClientTransportInterface;
+use Cxxi\FtpClient\Model\ConnectionOptions;
+use Cxxi\FtpClient\Service\ClientTransportFactory;
+use Psr\Log\LoggerInterface;
+
+/**
+ * High-level entry point for creating FTP/FTPS/SFTP clients.
+ *
+ * This class provides a simple, developer-friendly façade over the internal
+ * transport factory. It automatically resolves the appropriate transport
+ * (FTP, FTPS or SFTP) based on the URL scheme.
+ *
+ * Example:
+ *
+ * <code>
+ * use Cxxi\FtpClient\FtpClient;
+ *
+ * $client = FtpClient::fromUrl('sftp://user:pass@example.com:22/path');
+ *
+ * $client
+ *     ->connect()
+ *     ->loginWithPassword()
+ *     ->listFiles('.');
+ * </code>
+ *
+ * The returned instance implements {@see ClientTransportInterface}.
+ */
+final class FtpClient
+{
+    /**
+     * Create a transport client from a connection URL.
+     *
+     * The transport type is automatically determined from the URL scheme:
+     * - ftp://  → FTP
+     * - ftps:// → FTPS
+     * - sftp:// → SFTP
+     *
+     * @param string $url
+     *      Connection URL including scheme, host, optional credentials and path.
+     *
+     * @param ConnectionOptions|null $options
+     *      Optional connection configuration (timeouts, retry policy,
+     *      passive mode, host key verification, etc.).
+     *
+     * @param LoggerInterface|null $logger
+     *      Optional PSR-3 logger used for connection, authentication
+     *      and transfer logging.
+     *
+     * @return ClientTransportInterface
+     *      A protocol-specific transport client ready to be connected
+     *      and authenticated.
+     */
+    public static function fromUrl(
+        string $url,
+        ?ConnectionOptions $options = null,
+        ?LoggerInterface $logger = null
+    ): ClientTransportInterface {
+        return self::factory()->create($url, $options, $logger);
+    }
+
+    /**
+     * Resolve the transport factory instance.
+     *
+     * Returns the overridden factory when provided (typically in tests),
+     * otherwise falls back to the default {@see ClientTransportFactory}.
+     *
+     * @return ClientTransportFactoryInterface
+     */
+    private static function factory(): ClientTransportFactoryInterface
+    {
+        return self::$factoryOverride ?? new ClientTransportFactory();
+    }
+
+    /**
+     * Optional factory override used mainly for testing purposes.
+     *
+     * When set, this factory will be used instead of the default
+     * {@see ClientTransportFactory} instance.
+     *
+     * @internal
+     */
+    private static ?ClientTransportFactoryInterface $factoryOverride = null;
+
+    /**
+     * @internal For tests only.
+     */
+    public static function _setFactoryForTests(?ClientTransportFactoryInterface $factory): void
+    {
+        self::$factoryOverride = $factory;
+    }
+}

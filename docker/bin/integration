@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+git config --global --add safe.directory /app >/dev/null 2>&1 || true
+
+TARGET="${INTEGRATION_TARGET:-sftp}"
+
+fail_state_debug() {
+  echo "---- DEBUG /state ----" >&2
+  ls -la /state >&2 || true
+  echo "---- DEBUG /state/keys ----" >&2
+  ls -la /state/keys >&2 || true
+  echo "----------------------" >&2
+}
+
+wait_for_file() {
+  local file="$1"
+  local label="$2"
+  local tries="${3:-200}" # *0.1s => 20s
+  local i
+
+  for i in $(seq 1 "$tries"); do
+    if [ -s "$file" ]; then
+      return 0
+    fi
+    sleep 0.1
+  done
+
+  echo "Missing $file ($label not finished?)" >&2
+  fail_state_debug
+  return 1
+}
+
+wait_for_exists() {
+  local file="$1"
+  local label="$2"
+  local tries="${3:-200}"
+  local i
+
+  for i in $(seq 1 "$tries"); do
+    if [ -e "$file" ]; then
+      return 0
+    fi
+    sleep 0.1
+  done
+
+  echo "Missing $file ($label not finished?)" >&2
+  fail_state_debug
+  return 1
+}
+
+wait_for_port() {
+  local host="$1"
+  local port="$2"
+  local tries="${3:-200}"
+  local i
+
+  for i in $(seq 1 "$tries"); do
+    if command -v nc >/dev/null 2>&1; then
+      nc -z "$host" "$port" >/dev/null 2>&1 && return 0
+    else
+      (echo >/dev/tcp/"$host"/"$port") >/dev/null 2>&1 && return 0 || true
+    fi
+    sleep 0.1
+  done
+
+  echo "Port not reachable: $host:$port" >&2
+  return 1
+}
+
+# --- Target-specific setup ---
+case "$TARGET" in
+  sftp)
+    # 1) fingerprint env
+    wait_for_file "/state/sftp.env" "fingerprint"
+
+    echo "---- /state/sftp.env ----"
+    cat /state/sftp.env
+    echo "-------------------------"
+
+    set -a
+    # shellcheck disable=SC1091
+    . /state/sftp.env
+    set +a
+
+    echo "Using SFTP_HOSTKEY_ALGO=${SFTP_HOSTKEY_ALGO:-<empty>}"
+    echo "Using SFTP_FINGERPRINT=${SFTP_FINGERPRINT:-<empty>}"
+
+    # 2) pubkey auth artifacts (si tes tests pubkey existent)
+    wait_for_exists "/state/keys" "keygen"
+    wait_for_file "/state/keys/id_ed25519" "keygen"
+    wait_for_file "/state/keys/id_ed25519.pub" "keygen"
+
+    # 3) authorized_keys ready marker
+    wait_for_file "/state/authorized_keys.ok" "authorize_key"
+
+    # 4) port
+    wait_for_port "${SFTP_HOST:-sftp}" "${SFTP_PORT:-22}"
+    ;;
+
+  ftp)
+    wait_for_port "${FTP_HOST:-ftp}" "${FTP_PORT:-21}"
+    ;;
+
+  ftps)
+    wait_for_port "${FTPS_HOST:-ftps}" "${FTPS_PORT:-21}"
+    ;;
+
+  *)
+    echo "Unknown INTEGRATION_TARGET=$TARGET (expected: sftp|ftp|ftps)" >&2
+    exit 2
+    ;;
+esac
+
+composer install --no-interaction --prefer-dist
+
+# Run only the group (so a single compose can still contain all tests)
+vendor/bin/phpunit --testsuite integration --display-skipped --group "$TARGET"
