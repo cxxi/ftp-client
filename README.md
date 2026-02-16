@@ -14,7 +14,9 @@ Pure PHP **FTP / FTPS / SFTP** client (framework agnostic).
 Simple, expressive API:
 
 ```php
-$client = FtpClient::fromUrl('ftp://user:pass@example.com:22/path');
+$clientFtp = FtpClient::fromUrl('ftp://user:pass@example.com:21/path');
+$clientFtps = FtpClient::fromUrl('ftps://user:pass@example.com:21/path');
+$clientSftp = FtpClient::fromUrl('sftp://user:pass@example.com:22/path');
 ```
 
 A clean, testable and production-ready transport layer designed for:
