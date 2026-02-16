@@ -1,4 +1,3 @@
-
 # cxxi/ftp-client
 
 [![PHP Version](https://img.shields.io/badge/php-8.2%2B-blue.svg)](https://php.net)
@@ -32,6 +31,29 @@ Supports:
 * SFTP host key verification (SHA256)
 * PSR-3 logging
 * Clean architecture (Ports & Adapters)
+
+---
+
+## Table of Contents
+
+* [Why this library?](#why-this-library)
+* [Installation](#installation)
+* [Requirements](#requirements)
+* [Quick Start](#quick-start)
+* [URL Format](#url-format)
+* [Using Connection Options](#using-connection-options)
+* [Supported Options](#supported-options)
+* [Retry Policy](#retry-policy)
+* [Common Operations](#common-operations)
+* [Authentication](#authentication)
+* [Logging](#logging)
+* [Connection Lifecycle](#connection-lifecycle)
+* [FTP-only Advanced Listing](#ftp-only-advanced-listing)
+* [SFTP Fingerprint Limitations (ext-ssh2)](#sftp-fingerprint-limitations-ext-ssh2)
+* [Architecture](#architecture)
+* [Quality & Tests](#quality--tests)
+* [Roadmap](#roadmap)
+* [License](#license)
 
 ---
 
@@ -100,6 +122,8 @@ Works in:
 * Cron jobs
 
 No framework dependency.
+
+---
 
 ### Production Ready
 
@@ -247,32 +271,6 @@ connection will fail.
 
 ---
 
-## SFTP Fingerprint Limitations (ext-ssh2)
-
-When using the `ext-ssh2` extension (PECL ssh2), only the following
-fingerprint algorithms are available via `ssh2_fingerprint()`:
-
-* `MD5`
-* `SHA1`
-
-The extension does **not** expose SHA256 fingerprints, even though
-the underlying libssh2 library supports it.
-
-As a consequence:
-
-* `SHA256:` fingerprints (OpenSSH default format) cannot be verified
-  when using ext-ssh2.
-* Only `MD5:` and `SHA1:` prefixed fingerprints are supported.
-* There is no automatic fallback between algorithms.
-
-If a `SHA256:` fingerprint is provided, the connection will fail
-when strict host key checking is enabled.
-
-This limitation comes from the PHP extension API, not from the
-library itself.
-
----
-
 ## Retry Policy
 
 Retry is **disabled by default** (`retryMax = 0`).
@@ -351,18 +349,6 @@ $client->chmod('file.csv', 0644);
 
 ---
 
-## FTP-only Advanced Listing
-
-Available only on FTP / FTPS:
-
-```php
-$raw = $client->rawList('.', recursive: false);
-
-$mlsd = $client->mlsd('.');
-```
-
----
-
 ## Authentication
 
 ### Password
@@ -394,6 +380,18 @@ $client
 ```
 
 Only valid for SFTP connections.
+
+---
+
+## FTP-only Advanced Listing
+
+Available only on FTP / FTPS:
+
+```php
+$raw = $client->rawList('.', recursive: false);
+
+$mlsd = $client->mlsd('.');
+```
 
 ---
 
@@ -435,6 +433,32 @@ Safe to call even if not connected.
 
 ---
 
+## SFTP Fingerprint Limitations (ext-ssh2)
+
+When using the `ext-ssh2` extension (PECL ssh2), only the following
+fingerprint algorithms are available via `ssh2_fingerprint()`:
+
+* `MD5`
+* `SHA1`
+
+The extension does **not** expose SHA256 fingerprints, even though
+the underlying libssh2 library supports it.
+
+As a consequence:
+
+* `SHA256:` fingerprints (OpenSSH default format) cannot be verified
+  when using ext-ssh2.
+* Only `MD5:` and `SHA1:` prefixed fingerprints are supported.
+* There is no automatic fallback between algorithms.
+
+If a `SHA256:` fingerprint is provided, the connection will fail
+when strict host key checking is enabled.
+
+This limitation comes from the PHP extension API, not from the
+library itself.
+
+---
+
 ## Architecture
 
 The library follows a clean architecture approach:
@@ -446,39 +470,6 @@ The library follows a clean architecture approach:
 * Retry wrapper with safe/unsafe semantics
 
 This design allows easy mocking and full unit testing.
-
----
-
-## Roadmap
-
-Planned future improvements:
-
-### phpseclib backend
-
-Add optional support for `phpseclib` as an alternative SFTP backend.
-
-Benefits:
-
-* Native SHA256 fingerprint support (OpenSSH compatible)
-* No dependency on ext-ssh2
-* Greater portability
-
----
-
-### known_hosts Support
-
-Add support for OpenSSH-style `known_hosts` verification:
-
-* Automatic host key persistence
-* TOFU (Trust On First Use) mode
-* Strict host verification policies
-
----
-
-### Extended Fingerprint Support
-
-Expose SHA256 fingerprint verification when available
-(via phpseclib backend or future ext-ssh2 improvements).
 
 ---
 
@@ -500,7 +491,7 @@ Run unit tests:
 
 ```bash
 composer test:unit
-````
+```
 
 Generate coverage report:
 
@@ -578,8 +569,39 @@ Every protocol feature documented in this README is covered by automated tests.
 
 ---
 
+## Roadmap
+
+Planned future improvements:
+
+### phpseclib backend
+
+Add optional support for `phpseclib` as an alternative SFTP backend.
+
+Benefits:
+
+* Native SHA256 fingerprint support (OpenSSH compatible)
+* No dependency on ext-ssh2
+* Greater portability
+
+---
+
+### known_hosts Support
+
+Add support for OpenSSH-style `known_hosts` verification:
+
+* Automatic host key persistence
+* TOFU (Trust On First Use) mode
+* Strict host verification policies
+
+---
+
+### Extended Fingerprint Support
+
+Expose SHA256 fingerprint verification when available
+(via phpseclib backend or future ext-ssh2 improvements).
+
+---
+
 ## License
 
 MIT.
-
----
