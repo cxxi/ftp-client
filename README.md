@@ -15,7 +15,9 @@ Simple, expressive API:
 
 ```php
 $clientFtp = FtpClient::fromUrl('ftp://user:pass@example.com:21/path');
+
 $clientFtps = FtpClient::fromUrl('ftps://user:pass@example.com:21/path');
+
 $clientSftp = FtpClient::fromUrl('sftp://user:pass@example.com:22/path');
 ```
 
