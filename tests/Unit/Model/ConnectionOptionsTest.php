@@ -64,7 +64,7 @@ final class ConnectionOptionsTest extends TestCase
         self::assertSame(PassiveMode::AUTO, ConnectionOptions::fromArray(['passive' => ['x']])->passive);
     }
 
-    public function testSftpArrayNonArrayIsIgnored(): void
+    public function testSshArrayNonArrayIsIgnored(): void
     {
         $opt = ConnectionOptions::fromArray(['ssh' => 'nope']);
 
