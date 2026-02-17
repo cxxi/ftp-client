@@ -651,6 +651,8 @@ or contact the maintainer privately before disclosing it publicly.
 
 Credentials are never logged by design.
 
+see [SECURITY.md](SECURITY).
+
 ---
 
 ## Roadmap
