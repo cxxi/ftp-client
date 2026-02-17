@@ -1,0 +1,14 @@
+# Default owner for the entire repository
+* @cxxi
+
+# Core library
+/src/ @cxxi
+
+# Tests
+/tests/ @cxxi
+
+# CI / GitHub configuration
+/.github/ @cxxi
+
+# Docker integration stacks
+/docker/ @cxxi

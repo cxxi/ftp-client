@@ -64,9 +64,9 @@ final class ConnectionOptionsTest extends TestCase
         self::assertSame(PassiveMode::AUTO, ConnectionOptions::fromArray(['passive' => ['x']])->passive);
     }
 
-    public function testSftpArrayNonArrayIsIgnored(): void
+    public function testSshArrayNonArrayIsIgnored(): void
     {
-        $opt = ConnectionOptions::fromArray(['sftp' => 'nope']);
+        $opt = ConnectionOptions::fromArray(['ssh' => 'nope']);
 
         self::assertNull($opt->hostKeyAlgo);
         self::assertNull($opt->expectedFingerprint);
@@ -76,29 +76,29 @@ final class ConnectionOptionsTest extends TestCase
     public function testHostKeyAlgoAcceptsEnumStringKnownStringUnknownAndBlank(): void
     {
         $optEnum = ConnectionOptions::fromArray([
-            'sftp' => ['host_key_algo' => HostKeyAlgo::SSH_RSA],
+            'ssh' => ['host_key_algo' => HostKeyAlgo::SSH_RSA],
         ]);
         self::assertInstanceOf(HostKeyAlgo::class, $optEnum->hostKeyAlgo);
         self::assertSame(HostKeyAlgo::SSH_RSA, $optEnum->hostKeyAlgo);
 
         $optKnown = ConnectionOptions::fromArray([
-            'sftp' => ['host_key_algo' => HostKeyAlgo::SSH_RSA->value],
+            'ssh' => ['host_key_algo' => HostKeyAlgo::SSH_RSA->value],
         ]);
         self::assertSame(HostKeyAlgo::SSH_RSA, $optKnown->hostKeyAlgo);
 
         $optUnknown = ConnectionOptions::fromArray([
-            'sftp' => ['host_key_algo' => 'ssh-something-else'],
+            'ssh' => ['host_key_algo' => 'ssh-something-else'],
         ]);
         self::assertIsString($optUnknown->hostKeyAlgo);
         self::assertSame('ssh-something-else', $optUnknown->hostKeyAlgo);
 
         $optBlank = ConnectionOptions::fromArray([
-            'sftp' => ['host_key_algo' => '   '],
+            'ssh' => ['host_key_algo' => '   '],
         ]);
         self::assertNull($optBlank->hostKeyAlgo);
 
         $optBadType = ConnectionOptions::fromArray([
-            'sftp' => ['host_key_algo' => 123],
+            'ssh' => ['host_key_algo' => 123],
         ]);
         self::assertNull($optBadType->hostKeyAlgo);
     }
@@ -107,34 +107,34 @@ final class ConnectionOptionsTest extends TestCase
     {
         self::assertSame(
             'SHA256:abc',
-            ConnectionOptions::fromArray(['sftp' => ['expected_fingerprint' => '  SHA256:abc  ']])->expectedFingerprint
+            ConnectionOptions::fromArray(['ssh' => ['expected_fingerprint' => '  SHA256:abc  ']])->expectedFingerprint
         );
 
-        self::assertNull(ConnectionOptions::fromArray(['sftp' => ['expected_fingerprint' => '   ']])->expectedFingerprint);
-        self::assertNull(ConnectionOptions::fromArray(['sftp' => ['expected_fingerprint' => 123]])->expectedFingerprint);
+        self::assertNull(ConnectionOptions::fromArray(['ssh' => ['expected_fingerprint' => '   ']])->expectedFingerprint);
+        self::assertNull(ConnectionOptions::fromArray(['ssh' => ['expected_fingerprint' => 123]])->expectedFingerprint);
     }
 
     public function testStrictHostKeyCheckingParsesBoolIntAndStringKeywords(): void
     {
-        self::assertTrue(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => true]])->strictHostKeyChecking);
-        self::assertTrue(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => 1]])->strictHostKeyChecking);
-        self::assertTrue(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => '1']])->strictHostKeyChecking);
+        self::assertTrue(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => true]])->strictHostKeyChecking);
+        self::assertTrue(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => 1]])->strictHostKeyChecking);
+        self::assertTrue(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => '1']])->strictHostKeyChecking);
 
-        self::assertFalse(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => false]])->strictHostKeyChecking);
-        self::assertFalse(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => 0]])->strictHostKeyChecking);
-        self::assertFalse(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => '0']])->strictHostKeyChecking);
+        self::assertFalse(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => false]])->strictHostKeyChecking);
+        self::assertFalse(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => 0]])->strictHostKeyChecking);
+        self::assertFalse(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => '0']])->strictHostKeyChecking);
 
-        self::assertTrue(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => 'YES']])->strictHostKeyChecking);
-        self::assertTrue(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => ' on ']])->strictHostKeyChecking);
-        self::assertTrue(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => 'true']])->strictHostKeyChecking);
+        self::assertTrue(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => 'YES']])->strictHostKeyChecking);
+        self::assertTrue(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => ' on ']])->strictHostKeyChecking);
+        self::assertTrue(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => 'true']])->strictHostKeyChecking);
 
-        self::assertFalse(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => 'NO']])->strictHostKeyChecking);
-        self::assertFalse(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => ' off ']])->strictHostKeyChecking);
-        self::assertFalse(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => 'false']])->strictHostKeyChecking);
+        self::assertFalse(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => 'NO']])->strictHostKeyChecking);
+        self::assertFalse(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => ' off ']])->strictHostKeyChecking);
+        self::assertFalse(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => 'false']])->strictHostKeyChecking);
 
-        self::assertFalse(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => 'maybe']])->strictHostKeyChecking);
+        self::assertFalse(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => 'maybe']])->strictHostKeyChecking);
 
-        self::assertFalse(ConnectionOptions::fromArray(['sftp' => ['strict_host_key_checking' => ['x']]])->strictHostKeyChecking);
+        self::assertFalse(ConnectionOptions::fromArray(['ssh' => ['strict_host_key_checking' => ['x']]])->strictHostKeyChecking);
     }
 
     public function testRetryArrayNonArrayIsIgnoredAndDefaultsKept(): void

@@ -8,6 +8,8 @@ on:
     branches: [ main ]
   push:
     branches: [ main ]
+    tags:
+      - 'v*'
 
 jobs:
   qa-unit:
@@ -73,13 +75,52 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build PHP image (FTP) with cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.integration.ftp
+          tags: ftp-client-php-ftp:ci
+          load: true
+          cache-from: type=gha,scope=php-ftp
+          cache-to: type=gha,mode=max,scope=php-ftp
+
+      - name: Build PHP image (FTPS) with cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.integration.ftps
+          tags: ftp-client-php-ftps:ci
+          load: true
+          cache-from: type=gha,scope=php-ftps
+          cache-to: type=gha,mode=max,scope=php-ftps
+
+      - name: Build PHP image (SFTP) with cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.integration.sftp
+          tags: ftp-client-php-sftp:ci
+          load: true
+          cache-from: type=gha,scope=php-sftp
+          cache-to: type=gha,mode=max,scope=php-sftp
+
       - name: FTP integration
+        env:
+          CI: "1"
         run: composer test:integration:ftp
 
       - name: FTPS integration
+        env:
+          CI: "1"
         run: composer test:integration:ftps
 
       - name: SFTP integration
+        env:
+          CI: "1"
         run: composer test:integration:sftp
 
   coverage:

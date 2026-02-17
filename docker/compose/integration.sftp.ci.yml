@@ -1,0 +1,8 @@
+services:
+  php:
+    image: ftp-client-php-sftp:ci
+    build: null
+    pull_policy: never
+
+  sftp:
+    ports: []

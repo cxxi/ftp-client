@@ -37,22 +37,22 @@
     "test:coverage": "php -d xdebug.mode=coverage vendor/bin/phpunit --testsuite unit --coverage-html coverage",
     "test:coverage:ci": "php -d xdebug.mode=coverage vendor/bin/phpunit --testsuite unit --coverage-clover=coverage.xml",
     "test:integration:ftp": [
-      "docker compose -f docker/compose/integration.ftp.yml up -d --build",
-      "docker compose -f docker/compose/integration.ftp.yml run --rm -e INTEGRATION_TARGET=ftp php",
-      "docker compose -f docker/compose/integration.ftp.yml down -v --remove-orphans"
+      "docker/bin/compose -f docker/compose/integration.ftp.yml up -d --build",
+      "docker/bin/compose -f docker/compose/integration.ftp.yml run --rm -e INTEGRATION_TARGET=ftp php",
+      "docker/bin/compose -f docker/compose/integration.ftp.yml down -v --remove-orphans"
     ],
     "test:integration:ftps": [
-      "docker compose -f docker/compose/integration.ftps.yml up -d --build ftps-cert",
-      "docker compose -f docker/compose/integration.ftps.yml run --rm ftps-cert",
-      "docker compose -f docker/compose/integration.ftps.yml up -d --build ftps",
-      "docker compose -f docker/compose/integration.ftps.yml run --rm -e INTEGRATION_TARGET=ftps php",
-      "docker compose -f docker/compose/integration.ftps.yml down -v --remove-orphans"
+      "docker/bin/compose -f docker/compose/integration.ftps.yml up -d --build ftps-cert",
+      "docker/bin/compose -f docker/compose/integration.ftps.yml run --rm ftps-cert",
+      "docker/bin/compose -f docker/compose/integration.ftps.yml up -d --build ftps",
+      "docker/bin/compose -f docker/compose/integration.ftps.yml run --rm -e INTEGRATION_TARGET=ftps php",
+      "docker/bin/compose -f docker/compose/integration.ftps.yml down -v --remove-orphans"
     ],
     "test:integration:sftp": [
-      "docker compose -f docker/compose/integration.sftp.yml up -d --build",
-      "docker compose -f docker/compose/integration.sftp.yml run --rm fingerprint",
-      "docker compose -f docker/compose/integration.sftp.yml run --rm -e INTEGRATION_TARGET=sftp php",
-      "docker compose -f docker/compose/integration.sftp.yml down -v --remove-orphans"
+      "docker/bin/compose -f docker/compose/integration.sftp.yml up -d --build",
+      "docker/bin/compose -f docker/compose/integration.sftp.yml run --rm fingerprint",
+      "docker/bin/compose -f docker/compose/integration.sftp.yml run --rm -e INTEGRATION_TARGET=sftp php",
+      "docker/bin/compose -f docker/compose/integration.sftp.yml down -v --remove-orphans"
     ],
     "test:integration": [
       "@test:integration:ftp",

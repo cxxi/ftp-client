@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+args=("$@")
+
+inserted_ci_override="0"
+
+if [[ -n "${CI:-}" ]]; then
+  for ((i=0; i<${#args[@]}; i++)); do
+    if [[ "${args[$i]}" == "-f" && $((i+1)) -lt ${#args[@]} ]]; then
+      f="${args[$((i+1))]}"
+      ci_f="${f%.yml}.ci.yml"
+
+      if [[ -f "$ci_f" ]]; then
+        args=("${args[@]:0:$((i+2))}" "-f" "$ci_f" "${args[@]:$((i+2))}")
+        inserted_ci_override="1"
+      fi
+
+      break
+    fi
+  done
+
+  if [[ "$inserted_ci_override" == "1" ]]; then
+    filtered=()
+    for a in "${args[@]}"; do
+      if [[ "$a" != "--build" ]]; then
+        filtered+=("$a")
+      fi
+    done
+    args=("${filtered[@]}")
+  fi
+fi
+
+exec docker compose "${args[@]}"

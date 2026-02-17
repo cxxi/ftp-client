@@ -1,6 +1,7 @@
 /docs export-ignore
 /tests export-ignore
 /.github export-ignore
+/CODEOWNERS export-ignore
 /docker export-ignore
 /var export-ignore
 /coverage export-ignore
