@@ -1,0 +1,11 @@
+services:
+  php:
+    image: ftp-client-php-ftps:ci
+    build: null
+    pull_policy: never
+
+  ftps:
+    ports: []
+
+  ftps-cert:
+    pull_policy: if_not_present

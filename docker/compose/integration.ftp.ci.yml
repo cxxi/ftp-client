@@ -1,0 +1,8 @@
+services:
+  php:
+    image: ftp-client-php-ftp:ci
+    build: null
+    pull_policy: never
+
+  ftp:
+    ports: []
