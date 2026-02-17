@@ -25,3 +25,8 @@ This project adheres to Semantic Versioning.
 ### Security
 - Credentials never logged
 - Strict host key checking support for SFTP
+
+## [1.0.1] - 2026-02-17
+
+### Fixed
+- fix key in connectionOption
