@@ -56,7 +56,7 @@ final readonly class ConnectionOptions
      *
      * - timeout (int|string)
      * - passive (bool|int|string)
-     * - sftp:
+     * - ssh:
      *     - host_key_algo (HostKeyAlgo|string)
      *     - expected_fingerprint (string) (MD5/SHA1 recommended: "MD5:..", "SHA1:..")
      *     - strict_host_key_checking (bool|int|string)
@@ -157,14 +157,14 @@ final readonly class ConnectionOptions
     }
 
     /**
-     * Extract the "sftp" sub-array.
+     * Extract the "ssh" sub-array.
      *
      * @param array<string, mixed> $options
      * @return array<string, mixed>
      */
-    private static function getSftpArray(array $options): array
+    private static function getSshArray(array $options): array
     {
-        return self::normalizeStringKeyedArray($options['sftp'] ?? null);
+        return self::normalizeStringKeyedArray($options['ssh'] ?? null);
     }
 
     /**
@@ -172,13 +172,13 @@ final readonly class ConnectionOptions
      */
     private static function parseHostKeyAlgo(array $options): HostKeyAlgo|string|null
     {
-        $sftp = self::getSftpArray($options);
+        $ssh = self::getSshArray($options);
 
-        if (!\array_key_exists('host_key_algo', $sftp)) {
+        if (!\array_key_exists('host_key_algo', $ssh)) {
             return null;
         }
 
-        $raw = $sftp['host_key_algo'];
+        $raw = $ssh['host_key_algo'];
 
         if ($raw instanceof HostKeyAlgo) {
             return $raw;
@@ -201,13 +201,13 @@ final readonly class ConnectionOptions
      */
     private static function parseExpectedFingerprint(array $options): ?string
     {
-        $sftp = self::getSftpArray($options);
+        $ssh = self::getSshArray($options);
 
-        if (!\array_key_exists('expected_fingerprint', $sftp)) {
+        if (!\array_key_exists('expected_fingerprint', $ssh)) {
             return null;
         }
 
-        $raw = $sftp['expected_fingerprint'];
+        $raw = $ssh['expected_fingerprint'];
 
         if (!\is_string($raw)) {
             return null;
@@ -222,9 +222,9 @@ final readonly class ConnectionOptions
      */
     private static function parseStrictHostKeyChecking(array $options): bool
     {
-        $sftp = self::getSftpArray($options);
+        $ssh = self::getSshArray($options);
 
-        $raw = $sftp['strict_host_key_checking'] ?? false;
+        $raw = $ssh['strict_host_key_checking'] ?? false;
 
         if (\is_bool($raw)) {
             return $raw;

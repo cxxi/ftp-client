@@ -136,7 +136,7 @@ This library is:
 
 * Fully covered by unit tests (100%)
 * Integration tested against real FTP / FTPS / SFTP servers
-*  Static analysis clean (PHPStan level max (9) + strict rules)
+* Static analysis clean (PHPStan level max (9) + strict rules)
 * Free of global state
 * Designed for deterministic error handling
 
@@ -221,7 +221,7 @@ $client = FtpClient::fromUrl(
 ### Array format (canonical structure)
 
 You can also build options from an array.
-The canonical structure groups protocol-specific options under dedicated keys:
+The canonical structure groups transport-layer options under dedicated keys, so protocol-specific settings stay isolated and easy to extend.
 
 ```php
 $options = ConnectionOptions::fromArray([
@@ -236,7 +236,7 @@ $options = ConnectionOptions::fromArray([
         'unsafe_operations' => false,
     ],
 
-    'sftp' => [
+    'ssh' => [
         'host_key_algo' => 'ssh-ed25519',
         'expected_fingerprint' => 'MD5:aa:bb:cc:dd:...',
         'strict_host_key_checking' => true,
